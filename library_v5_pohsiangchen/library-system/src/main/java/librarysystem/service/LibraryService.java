@@ -69,10 +69,18 @@ public class LibraryService {
                   AND (? = '' OR LOWER(b.authors) LIKE ?)
                   AND (? = '' OR LOWER(COALESCE(b.subjects, '')) LIKE ?)
                   AND (? = '' OR LOWER(COALESCE(b.publisher, '')) LIKE ?)
-                  AND (? = '' OR EXISTS (
-                        SELECT 1 FROM book_isbns bi
-                        WHERE bi.book_id = b.book_id AND LOWER(bi.isbn) LIKE ?
-                  ))
+                  AND (? = '' OR
+                        LOWER(COALESCE((SELECT GROUP_CONCAT(isbn, ', ') FROM book_isbns WHERE book_id = b.book_id), '')) LIKE ?
+                        OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(COALESCE((SELECT GROUP_CONCAT(isbn, '') FROM book_isbns WHERE book_id = b.book_id), '')), '-', ''), ' ', ''), ',', ''), 'isbn', '') LIKE ?
+                        OR EXISTS (
+                            SELECT 1 FROM book_isbns bi
+                            WHERE bi.book_id = b.book_id
+                              AND (
+                                  LOWER(bi.isbn) LIKE ?
+                                  OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(bi.isbn), '-', ''), ' ', ''), ',', ''), 'isbn', '') LIKE ?
+                              )
+                        )
+                  )
                 ORDER BY b.active DESC, b.title ASC
                 """;
 
@@ -623,16 +631,19 @@ public class LibraryService {
 
     private void bindSearchParameters(PreparedStatement ps, String title, String author, String subject,
                                       String publisher, String isbn) throws SQLException {
-        int index = 1;
-        for (String value : List.of(safeLower(title), safeLower(title), safeLower(author), safeLower(author),
-                safeLower(subject), safeLower(subject), safeLower(publisher), safeLower(publisher),
-                safeLower(isbn), safeLike(isbn))) {
-            ps.setString(index++, value);
-        }
+        ps.setString(1, safeLower(title));
         ps.setString(2, safeLike(title));
+        ps.setString(3, safeLower(author));
         ps.setString(4, safeLike(author));
+        ps.setString(5, safeLower(subject));
         ps.setString(6, safeLike(subject));
+        ps.setString(7, safeLower(publisher));
         ps.setString(8, safeLike(publisher));
+        ps.setString(9, safeLower(isbn));
+        ps.setString(10, safeLike(isbn));
+        ps.setString(11, safeIsbnLike(isbn));
+        ps.setString(12, safeLike(isbn));
+        ps.setString(13, safeIsbnLike(isbn));
     }
 
     private String safeLower(String value) {
@@ -642,6 +653,15 @@ public class LibraryService {
     private String safeLike(String value) {
         String normalized = safeLower(value);
         return normalized.isBlank() ? "" : "%" + normalized + "%";
+    }
+
+    private String safeIsbnLike(String value) {
+        String normalized = normalizeIsbn(value);
+        return normalized.isBlank() ? "" : "%" + normalized + "%";
+    }
+
+    private String normalizeIsbn(String value) {
+        return value == null ? "" : value.replaceAll("[^0-9Xx]", "").toLowerCase();
     }
 
     private boolean isUserStillActive(Connection connection, int userId) throws SQLException {

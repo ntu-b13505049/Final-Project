@@ -32,6 +32,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -118,7 +120,8 @@ public class AdminDashboardFrame extends JFrame {
     public AdminDashboardFrame(Admin admin) {
         this.admin = admin;
         setTitle("圖書館系統 - 管理者介面");
-        setSize(1400, 860);
+        setSize(UiUtil.mainWindowSize());
+        setMinimumSize(UiUtil.mainWindowSize());
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
@@ -134,7 +137,7 @@ public class AdminDashboardFrame extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
 
         JLabel titleLabel = new JLabel("管理者後台");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
         adminInfoLabel = new JLabel(" ");
 
         JPanel left = new JPanel();
@@ -223,9 +226,7 @@ public class AdminDashboardFrame extends JFrame {
         addFilterField(filterPanel, 1, "姓名", recordBorrowerNameField);
         addFilterField(filterPanel, 2, "書名 / 書籍ID", recordBookTitleField);
         addFilterCombo(filterPanel, 3, "狀態", recordStatusBox);
-        JButton searchButton = new JButton("查詢紀錄");
         JButton resetButton = new JButton("清空條件");
-        searchButton.addActionListener(e -> refreshBorrowRecordTable());
         resetButton.addActionListener(e -> {
             recordStudentNoField.setText("");
             recordBorrowerNameField.setText("");
@@ -237,22 +238,28 @@ public class AdminDashboardFrame extends JFrame {
         gbc.gridx = 8;
         gbc.gridy = 0;
         gbc.gridheight = 2;
-        gbc.insets = new Insets(6, 6, 6, 6);
-        JPanel action = new JPanel(new GridLayout(2, 1, 6, 6));
-        action.add(searchButton);
-        action.add(resetButton);
+        gbc.insets = new Insets(6, 10, 6, 6);
+        JPanel action = new JPanel(new BorderLayout(6, 6));
+        action.add(new JLabel("自動搜尋", SwingConstants.CENTER), BorderLayout.NORTH);
+        action.add(resetButton, BorderLayout.CENTER);
         filterPanel.add(action, gbc);
 
         borrowRecordsModel = modelOf("紀錄ID", "學號", "借閱者", "等級", "書籍ID", "書名", "借出時間", "到期時間", "歸還時間", "逾期", "逾期天數", "罰款");
         borrowRecordsTable = new JTable(borrowRecordsModel);
         borrowRecordsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(borrowRecordsTable);
+        UiUtil.applyOverdueRowHighlight(borrowRecordsTable, 9, "是");
+        installAutoSearch(this::refreshBorrowRecordTable, recordStudentNoField, recordBorrowerNameField, recordBookTitleField);
+        installComboAutoSearch(this::refreshBorrowRecordTable, recordStatusBox);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        JButton viewUserHistoryButton = new JButton("查看選取借閱者完整借還紀錄");
         JButton viewBookHistoryButton = new JButton("查看選取書籍完整紀錄");
         JButton refreshButton = new JButton("重新整理");
+        buttons.add(viewUserHistoryButton);
         buttons.add(viewBookHistoryButton);
         buttons.add(refreshButton);
+        viewUserHistoryButton.addActionListener(e -> showSelectedBorrowerHistoryFromRecordTab());
         viewBookHistoryButton.addActionListener(e -> showSelectedBookHistory());
         refreshButton.addActionListener(e -> refreshBorrowRecordTable());
 
@@ -274,9 +281,7 @@ public class AdminDashboardFrame extends JFrame {
         addFilterField(filterPanel, 0, "學號 / 姓名 / ID", userSearchKeywordField);
         addFilterCombo(filterPanel, 1, "權限", userRoleFilterBox);
         addFilterCombo(filterPanel, 2, "狀態", userStatusFilterBox);
-        JButton userSearchButton = new JButton("搜尋使用者");
         JButton userResetButton = new JButton("清空條件");
-        userSearchButton.addActionListener(e -> refreshUsersTable());
         userResetButton.addActionListener(e -> {
             userSearchKeywordField.setText("");
             userRoleFilterBox.setSelectedIndex(0);
@@ -286,23 +291,27 @@ public class AdminDashboardFrame extends JFrame {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 6;
         gbc.gridy = 0;
-        gbc.insets = new Insets(6, 6, 6, 6);
-        JPanel filterActions = new JPanel(new GridLayout(2, 1, 6, 6));
-        filterActions.add(userSearchButton);
-        filterActions.add(userResetButton);
+        gbc.insets = new Insets(6, 10, 6, 6);
+        JPanel filterActions = new JPanel(new BorderLayout(6, 6));
+        filterActions.add(new JLabel("自動搜尋", SwingConstants.CENTER), BorderLayout.NORTH);
+        filterActions.add(userResetButton, BorderLayout.CENTER);
         filterPanel.add(filterActions, gbc);
 
         usersModel = modelOf("使用者ID", "學號", "姓名", "權限", "狀態", "建立時間");
         usersTable = new JTable(usersModel);
         usersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(usersTable);
+        installAutoSearch(this::refreshUsersTable, userSearchKeywordField);
+        installComboAutoSearch(this::refreshUsersTable, userRoleFilterBox, userStatusFilterBox);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        JButton viewUserHistoryButton = new JButton("查看選取使用者借還紀錄");
         JButton suspendButton = new JButton("停權選取使用者");
         JButton restoreButton = new JButton("復權選取使用者");
         roleLevelBox = new JComboBox<>(RolePolicy.allLevelsArray());
         JButton updateRoleButton = new JButton("設定選取使用者等級");
         JButton refreshButton = new JButton("重新整理");
+        buttons.add(viewUserHistoryButton);
         buttons.add(suspendButton);
         buttons.add(restoreButton);
         buttons.add(new JLabel("新等級："));
@@ -310,6 +319,7 @@ public class AdminDashboardFrame extends JFrame {
         buttons.add(updateRoleButton);
         buttons.add(refreshButton);
 
+        viewUserHistoryButton.addActionListener(e -> showSelectedUserBorrowHistory());
         suspendButton.addActionListener(e -> changeSelectedUserStatus("SUSPENDED"));
         restoreButton.addActionListener(e -> changeSelectedUserStatus("ACTIVE"));
         updateRoleButton.addActionListener(e -> changeSelectedUserRoleLevel());
@@ -333,9 +343,7 @@ public class AdminDashboardFrame extends JFrame {
         bookStatusFilterBox = new JComboBox<>(new String[]{"全部", "上架中", "已下架", "已借出", "可借"});
         addFilterField(searchPanel, 0, "關鍵字 / ISBN / 書籍ID", bookSearchKeywordField);
         addFilterCombo(searchPanel, 1, "狀態", bookStatusFilterBox);
-        JButton bookSearchButton = new JButton("搜尋書籍");
         JButton bookResetButton = new JButton("清空條件");
-        bookSearchButton.addActionListener(e -> refreshBooksTable());
         bookResetButton.addActionListener(e -> {
             bookSearchKeywordField.setText("");
             bookStatusFilterBox.setSelectedIndex(0);
@@ -344,23 +352,20 @@ public class AdminDashboardFrame extends JFrame {
         GridBagConstraints searchGbc = new GridBagConstraints();
         searchGbc.gridx = 4;
         searchGbc.gridy = 0;
-        searchGbc.insets = new Insets(6, 6, 6, 6);
-        JPanel searchActions = new JPanel(new GridLayout(2, 1, 6, 6));
-        searchActions.add(bookSearchButton);
-        searchActions.add(bookResetButton);
+        searchGbc.insets = new Insets(6, 10, 6, 6);
+        JPanel searchActions = new JPanel(new BorderLayout(6, 6));
+        searchActions.add(new JLabel("自動搜尋", SwingConstants.CENTER), BorderLayout.NORTH);
+        searchActions.add(bookResetButton, BorderLayout.CENTER);
         searchPanel.add(searchActions, searchGbc);
-
-        JPanel topPanel = new JPanel(new BorderLayout(6, 6));
-        topPanel.add(searchPanel, BorderLayout.NORTH);
-        topPanel.add(createBookFormPanel(), BorderLayout.CENTER);
-        panel.add(topPanel, BorderLayout.NORTH);
 
         booksModel = modelOf("書籍ID", "題名", "作者", "主題", "出版者", "ISBN", "狀態");
         booksTable = new JTable(booksModel);
         booksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(booksTable);
+        installAutoSearch(this::refreshBooksTable, bookSearchKeywordField);
+        installComboAutoSearch(this::refreshBooksTable, bookStatusFilterBox);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel bookActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         JButton addBookButton = new JButton("新增書籍");
         JButton loadBookButton = new JButton("載入選取書籍到表單");
         JButton updateBookButton = new JButton("修改書籍");
@@ -368,13 +373,13 @@ public class AdminDashboardFrame extends JFrame {
         JButton toggleActiveButton = new JButton("切換上架 / 下架");
         JButton historyButton = new JButton("查看本書借閱紀錄");
         JButton refreshButton = new JButton("重新整理");
-        buttons.add(addBookButton);
-        buttons.add(loadBookButton);
-        buttons.add(updateBookButton);
-        buttons.add(clearFormButton);
-        buttons.add(toggleActiveButton);
-        buttons.add(historyButton);
-        buttons.add(refreshButton);
+        bookActions.add(addBookButton);
+        bookActions.add(loadBookButton);
+        bookActions.add(updateBookButton);
+        bookActions.add(clearFormButton);
+        bookActions.add(toggleActiveButton);
+        bookActions.add(historyButton);
+        bookActions.add(refreshButton);
 
         addBookButton.addActionListener(e -> addBook());
         loadBookButton.addActionListener(e -> loadSelectedBookIntoForm());
@@ -384,8 +389,13 @@ public class AdminDashboardFrame extends JFrame {
         historyButton.addActionListener(e -> showSelectedBookHistoryFromBookTab());
         refreshButton.addActionListener(e -> refreshBooksTable());
 
+        JPanel topPanel = new JPanel(new BorderLayout(6, 6));
+        topPanel.add(searchPanel, BorderLayout.NORTH);
+        topPanel.add(createBookFormPanel(), BorderLayout.CENTER);
+        topPanel.add(bookActions, BorderLayout.SOUTH);
+        panel.add(topPanel, BorderLayout.NORTH);
+
         panel.add(new JScrollPane(booksTable), BorderLayout.CENTER);
-        panel.add(buttons, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -404,9 +414,7 @@ public class AdminDashboardFrame extends JFrame {
         reviewRatingFilterBox = new JComboBox<>(new String[]{"全部", "5", "4", "3", "2", "1"});
         addFilterField(reviewFilterPanel, 0, "使用者 / 書名 / 內容", reviewSearchKeywordField);
         addFilterCombo(reviewFilterPanel, 1, "評分", reviewRatingFilterBox);
-        JButton reviewSearchButton = new JButton("搜尋書評");
         JButton reviewResetButton = new JButton("清空條件");
-        reviewSearchButton.addActionListener(e -> refreshReviewsTable());
         reviewResetButton.addActionListener(e -> {
             reviewSearchKeywordField.setText("");
             reviewRatingFilterBox.setSelectedIndex(0);
@@ -415,11 +423,13 @@ public class AdminDashboardFrame extends JFrame {
         GridBagConstraints reviewGbc = new GridBagConstraints();
         reviewGbc.gridx = 4;
         reviewGbc.gridy = 0;
-        reviewGbc.insets = new Insets(6, 6, 6, 6);
-        JPanel reviewActions = new JPanel(new GridLayout(2, 1, 6, 6));
-        reviewActions.add(reviewSearchButton);
-        reviewActions.add(reviewResetButton);
+        reviewGbc.insets = new Insets(6, 10, 6, 6);
+        JPanel reviewActions = new JPanel(new BorderLayout(6, 6));
+        reviewActions.add(new JLabel("自動搜尋", SwingConstants.CENTER), BorderLayout.NORTH);
+        reviewActions.add(reviewResetButton, BorderLayout.CENTER);
         reviewFilterPanel.add(reviewActions, reviewGbc);
+        installAutoSearch(this::refreshReviewsTable, reviewSearchKeywordField);
+        installComboAutoSearch(this::refreshReviewsTable, reviewRatingFilterBox);
         reviewPanel.add(reviewFilterPanel, BorderLayout.NORTH);
         reviewPanel.add(new JScrollPane(reviewsTable), BorderLayout.CENTER);
 
@@ -434,9 +444,7 @@ public class AdminDashboardFrame extends JFrame {
         reservationStatusFilterBox = new JComboBox<>(new String[]{"全部", "WAITING", "NOTIFIED", "FULFILLED", "CANCELLED"});
         addFilterField(reservationFilterPanel, 0, "使用者 / 書名 / 預約ID", reservationSearchKeywordField);
         addFilterCombo(reservationFilterPanel, 1, "狀態", reservationStatusFilterBox);
-        JButton reservationSearchButton = new JButton("搜尋預約");
         JButton reservationResetButton = new JButton("清空條件");
-        reservationSearchButton.addActionListener(e -> refreshReservationsTable());
         reservationResetButton.addActionListener(e -> {
             reservationSearchKeywordField.setText("");
             reservationStatusFilterBox.setSelectedIndex(0);
@@ -445,11 +453,13 @@ public class AdminDashboardFrame extends JFrame {
         GridBagConstraints reservationGbc = new GridBagConstraints();
         reservationGbc.gridx = 4;
         reservationGbc.gridy = 0;
-        reservationGbc.insets = new Insets(6, 6, 6, 6);
-        JPanel reservationActions = new JPanel(new GridLayout(2, 1, 6, 6));
-        reservationActions.add(reservationSearchButton);
-        reservationActions.add(reservationResetButton);
+        reservationGbc.insets = new Insets(6, 10, 6, 6);
+        JPanel reservationActions = new JPanel(new BorderLayout(6, 6));
+        reservationActions.add(new JLabel("自動搜尋", SwingConstants.CENTER), BorderLayout.NORTH);
+        reservationActions.add(reservationResetButton, BorderLayout.CENTER);
         reservationFilterPanel.add(reservationActions, reservationGbc);
+        installAutoSearch(this::refreshReservationsTable, reservationSearchKeywordField);
+        installComboAutoSearch(this::refreshReservationsTable, reservationStatusFilterBox);
         reservationPanel.add(reservationFilterPanel, BorderLayout.NORTH);
         reservationPanel.add(new JScrollPane(reservationsTable), BorderLayout.CENTER);
 
@@ -472,9 +482,7 @@ public class AdminDashboardFrame extends JFrame {
         roleRequestStatusFilterBox = new JComboBox<>(new String[]{"全部", "PENDING", "APPROVED", "REJECTED"});
         addFilterField(filterPanel, 0, "學號 / 姓名 / 理由", roleRequestSearchKeywordField);
         addFilterCombo(filterPanel, 1, "狀態", roleRequestStatusFilterBox);
-        JButton searchButton = new JButton("搜尋申請");
         JButton resetButton = new JButton("清空條件");
-        searchButton.addActionListener(e -> refreshRoleRequestsTable());
         resetButton.addActionListener(e -> {
             roleRequestSearchKeywordField.setText("");
             roleRequestStatusFilterBox.setSelectedIndex(0);
@@ -483,16 +491,18 @@ public class AdminDashboardFrame extends JFrame {
         GridBagConstraints filterGbc = new GridBagConstraints();
         filterGbc.gridx = 4;
         filterGbc.gridy = 0;
-        filterGbc.insets = new Insets(6, 6, 6, 6);
-        JPanel filterActions = new JPanel(new GridLayout(2, 1, 6, 6));
-        filterActions.add(searchButton);
-        filterActions.add(resetButton);
+        filterGbc.insets = new Insets(6, 10, 6, 6);
+        JPanel filterActions = new JPanel(new BorderLayout(6, 6));
+        filterActions.add(new JLabel("自動搜尋", SwingConstants.CENTER), BorderLayout.NORTH);
+        filterActions.add(resetButton, BorderLayout.CENTER);
         filterPanel.add(filterActions, filterGbc);
 
         roleRequestsModel = modelOf("申請ID", "使用者ID", "學號", "姓名", "目前等級", "申請等級", "理由", "狀態", "建立時間", "處理時間", "管理者", "備註");
         roleRequestsTable = new JTable(roleRequestsModel);
         roleRequestsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(roleRequestsTable);
+        installAutoSearch(this::refreshRoleRequestsTable, roleRequestSearchKeywordField);
+        installComboAutoSearch(this::refreshRoleRequestsTable, roleRequestStatusFilterBox);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton approveButton = new JButton("核准選取申請");
@@ -619,6 +629,35 @@ public class AdminDashboardFrame extends JFrame {
         gbc.weightx = 1.0;
         gbc.insets = new Insets(6, 6, 6, 6);
         panel.add(field, gbc);
+    }
+
+    private void installAutoSearch(Runnable refreshAction, JTextField... fields) {
+        DocumentListener listener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshAction.run();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshAction.run();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                refreshAction.run();
+            }
+        };
+        for (JTextField field : fields) {
+            field.getDocument().addDocumentListener(listener);
+        }
+    }
+
+    @SafeVarargs
+    private final void installComboAutoSearch(Runnable refreshAction, JComboBox<String>... comboBoxes) {
+        for (JComboBox<String> comboBox : comboBoxes) {
+            comboBox.addActionListener(e -> refreshAction.run());
+        }
     }
 
     private JLabel statCard(JPanel container, String title) {
@@ -1042,6 +1081,58 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
+    private void showSelectedUserBorrowHistory() {
+        Integer userId = getSelectedInt(usersTable, 0);
+        String studentNo = getSelectedString(usersTable, 1);
+        String name = getSelectedString(usersTable, 2);
+        if (userId == null) {
+            showWarn("請先選擇一位使用者。");
+            return;
+        }
+        showUserBorrowHistoryDialog(userId, name + "（" + studentNo + "）");
+    }
+
+    private void showSelectedBorrowerHistoryFromRecordTab() {
+        String studentNo = getSelectedString(borrowRecordsTable, 1);
+        String name = getSelectedString(borrowRecordsTable, 2);
+        if (studentNo == null || studentNo.isBlank()) {
+            showWarn("請先選擇一筆借閱紀錄。");
+            return;
+        }
+        List<User> users = adminService.searchUsers(studentNo, "", "");
+        for (User user : users) {
+            if (studentNo.equals(user.getStudentNo())) {
+                showUserBorrowHistoryDialog(user.getUserId(), name + "（" + studentNo + "）");
+                return;
+            }
+        }
+        showWarn("找不到該借閱者的使用者資料。");
+    }
+
+    private void showUserBorrowHistoryDialog(int userId, String displayName) {
+        List<BorrowRecord> records = libraryService.getBorrowHistoryForUser(userId);
+        DefaultTableModel model = modelOf("紀錄ID", "書籍ID", "書名", "借出時間", "到期時間", "歸還時間", "是否逾期", "逾期天數", "罰款");
+        for (BorrowRecord record : records) {
+            model.addRow(new Object[]{
+                    record.getRecordId(),
+                    record.getBookId(),
+                    record.getBookTitle(),
+                    DateUtil.formatDisplay(record.getBorrowDate()),
+                    DateUtil.formatDisplay(record.getDueDate()),
+                    DateUtil.formatDisplay(record.getReturnDate()),
+                    record.isOverdue() ? "是" : "否",
+                    record.getOverdueDays(),
+                    record.getFineAmount() + " 元"
+            });
+        }
+        JTable table = new JTable(model);
+        UiUtil.applyDefaultTableStyle(table);
+        UiUtil.applyOverdueRowHighlight(table, 6, "是");
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new java.awt.Dimension(980, 460));
+        JOptionPane.showMessageDialog(this, scrollPane, "使用者借還紀錄：" + displayName, JOptionPane.PLAIN_MESSAGE);
+    }
+
     private void showSelectedBookHistory() {
         Integer bookId = getSelectedInt(borrowRecordsTable, 4);
         if (bookId == null) {
@@ -1079,6 +1170,7 @@ public class AdminDashboardFrame extends JFrame {
         }
         JTable table = new JTable(model);
         UiUtil.applyDefaultTableStyle(table);
+        UiUtil.applyOverdueRowHighlight(table, 7, "是");
         JOptionPane.showMessageDialog(this, new JScrollPane(table), "本書完整借閱紀錄", JOptionPane.PLAIN_MESSAGE);
     }
 
