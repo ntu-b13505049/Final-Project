@@ -1,6 +1,7 @@
 package librarysystem;
 
 import librarysystem.ui.LoginFrame;
+import librarysystem.util.UiUtil;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -12,6 +13,8 @@ public class App {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception ignored) {
         }
+
+        UiUtil.applyGlobalFont(16f);
 
         try {
             Database.initialize();

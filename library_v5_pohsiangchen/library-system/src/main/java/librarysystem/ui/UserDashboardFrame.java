@@ -29,6 +29,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -81,7 +83,8 @@ public class UserDashboardFrame extends JFrame {
     public UserDashboardFrame(User user) {
         this.currentUser = user;
         setTitle("圖書館系統 - 使用者介面");
-        setSize(1320, 820);
+        setSize(UiUtil.mainWindowSize());
+        setMinimumSize(UiUtil.mainWindowSize());
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
@@ -97,10 +100,10 @@ public class UserDashboardFrame extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
 
         JLabel titleLabel = new JLabel("學生使用者中心");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
 
         userInfoLabel = new JLabel(" ");
-        userInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        userInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 15));
 
         JPanel left = new JPanel();
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
@@ -142,10 +145,12 @@ public class UserDashboardFrame extends JFrame {
         dashboardBorrowTable = new JTable(dashboardBorrowModel);
         dashboardBorrowTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(dashboardBorrowTable);
+        UiUtil.applyOverdueRowHighlight(dashboardBorrowTable, 5, "逾期中");
 
         reminderModel = modelOf("紀錄ID", "書名", "到期時間", "狀態", "剩餘/逾期天數", "預估罰款");
         reminderTable = new JTable(reminderModel);
         UiUtil.applyDefaultTableStyle(reminderTable);
+        UiUtil.applyOverdueRowHighlight(reminderTable, 3, "逾期");
 
         notificationModel = modelOf("預約ID", "書名", "狀態", "通知時間");
         notificationTable = new JTable(notificationModel);
@@ -225,6 +230,7 @@ public class UserDashboardFrame extends JFrame {
         myBorrowTable = new JTable(myBorrowModel);
         myBorrowTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(myBorrowTable);
+        UiUtil.applyOverdueRowHighlight(myBorrowTable, 5, "是");
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton returnButton = new JButton("歸還選取書籍");
@@ -251,6 +257,7 @@ public class UserDashboardFrame extends JFrame {
         historyTable = new JTable(historyModel);
         historyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UiUtil.applyDefaultTableStyle(historyTable);
+        UiUtil.applyOverdueRowHighlight(historyTable, 6, "是");
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton reviewButton = new JButton("對選取紀錄寫 / 改書評");
@@ -389,9 +396,13 @@ public class UserDashboardFrame extends JFrame {
         addSearchField(fieldsPanel, 3, "出版者", publisherField);
         addSearchField(fieldsPanel, 4, "ISBN", isbnField);
 
-        JButton searchButton = new JButton("查詢");
+        installAutoSearch(() -> {
+            if (searchModel != null) {
+                refreshSearchResults();
+            }
+        }, titleField, authorField, subjectField, publisherField, isbnField);
+
         JButton resetButton = new JButton("清空條件");
-        searchButton.addActionListener(e -> refreshSearchResults());
         resetButton.addActionListener(e -> {
             titleField.setText("");
             authorField.setText("");
@@ -401,9 +412,10 @@ public class UserDashboardFrame extends JFrame {
             refreshSearchResults();
         });
 
-        JPanel btnPanel = new JPanel(new GridLayout(2, 1, 6, 6));
-        btnPanel.add(searchButton);
-        btnPanel.add(resetButton);
+        JPanel btnPanel = new JPanel(new BorderLayout(6, 6));
+        JLabel autoHint = new JLabel("輸入後自動搜尋", SwingConstants.CENTER);
+        btnPanel.add(autoHint, BorderLayout.NORTH);
+        btnPanel.add(resetButton, BorderLayout.CENTER);
 
         panel.add(fieldsPanel, BorderLayout.CENTER);
         panel.add(btnPanel, BorderLayout.EAST);
@@ -425,6 +437,28 @@ public class UserDashboardFrame extends JFrame {
         gbc.weightx = 1.0;
         gbc.insets = new Insets(6, 6, 6, 6);
         panel.add(field, gbc);
+    }
+
+    private void installAutoSearch(Runnable refreshAction, JTextField... fields) {
+        DocumentListener listener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshAction.run();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshAction.run();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                refreshAction.run();
+            }
+        };
+        for (JTextField field : fields) {
+            field.getDocument().addDocumentListener(listener);
+        }
     }
 
     private JPanel buildTitledPanel(String title, java.awt.Component child) {
@@ -989,6 +1023,7 @@ public class UserDashboardFrame extends JFrame {
         }
         JTable table = new JTable(model);
         UiUtil.applyDefaultTableStyle(table);
+        UiUtil.applyOverdueRowHighlight(table, 6, "是");
         JOptionPane.showMessageDialog(this, new JScrollPane(table), "本書近期借閱紀錄", JOptionPane.PLAIN_MESSAGE);
     }
 

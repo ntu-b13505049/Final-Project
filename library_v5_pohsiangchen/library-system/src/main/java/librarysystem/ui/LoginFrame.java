@@ -3,6 +3,7 @@ package librarysystem.ui;
 import librarysystem.model.Admin;
 import librarysystem.model.User;
 import librarysystem.service.AuthService;
+import librarysystem.util.UiUtil;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -28,7 +29,8 @@ public class LoginFrame extends JFrame {
 
     public LoginFrame() {
         setTitle("圖書館借還書系統");
-        setSize(640, 520);
+        setSize(UiUtil.mainWindowSize());
+        setMinimumSize(UiUtil.mainWindowSize());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(12, 12));
@@ -44,11 +46,11 @@ public class LoginFrame extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         JLabel title = new JLabel("Java 圖書館借還書系統", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 26));
+        title.setFont(new Font("SansSerif", Font.BOLD, 28));
         title.setAlignmentX(CENTER_ALIGNMENT);
 
         JLabel subtitle = new JLabel("學生 / 管理者雙角色、借還紀錄、提醒、預約、書評、等級申請、Web 報表", SwingConstants.CENTER);
-        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 16));
         subtitle.setAlignmentX(CENTER_ALIGNMENT);
 
         panel.add(title);
@@ -77,7 +79,7 @@ public class LoginFrame extends JFrame {
         addRow(panel, 1, "密碼", passwordField);
         addButtonRow(panel, 2, loginButton);
 
-        loginButton.addActionListener(e -> {
+        Runnable doLogin = () -> {
             try {
                 User user = authService.loginUser(studentNoField.getText(), new String(passwordField.getPassword()));
                 new UserDashboardFrame(user).setVisible(true);
@@ -85,7 +87,10 @@ public class LoginFrame extends JFrame {
             } catch (Exception ex) {
                 showError(ex.getMessage());
             }
-        });
+        };
+        loginButton.addActionListener(e -> doLogin.run());
+        studentNoField.addActionListener(e -> passwordField.requestFocusInWindow());
+        passwordField.addActionListener(e -> loginButton.doClick());
         return panel;
     }
 
@@ -119,6 +124,9 @@ public class LoginFrame extends JFrame {
                 showError(ex.getMessage());
             }
         });
+        studentNoField.addActionListener(e -> nameField.requestFocusInWindow());
+        nameField.addActionListener(e -> passwordField.requestFocusInWindow());
+        passwordField.addActionListener(e -> registerButton.doClick());
         return panel;
     }
 
@@ -133,7 +141,7 @@ public class LoginFrame extends JFrame {
         addRow(panel, 1, "管理者密碼", passwordField);
         addButtonRow(panel, 2, loginButton);
 
-        loginButton.addActionListener(e -> {
+        Runnable doLogin = () -> {
             try {
                 Admin admin = authService.loginAdmin(usernameField.getText(), new String(passwordField.getPassword()));
                 new AdminDashboardFrame(admin).setVisible(true);
@@ -141,7 +149,10 @@ public class LoginFrame extends JFrame {
             } catch (Exception ex) {
                 showError(ex.getMessage());
             }
-        });
+        };
+        loginButton.addActionListener(e -> doLogin.run());
+        usernameField.addActionListener(e -> passwordField.requestFocusInWindow());
+        passwordField.addActionListener(e -> loginButton.doClick());
         return panel;
     }
 
@@ -156,9 +167,9 @@ public class LoginFrame extends JFrame {
         tip1.setAlignmentX(CENTER_ALIGNMENT);
         tip2.setAlignmentX(CENTER_ALIGNMENT);
         tip3.setAlignmentX(CENTER_ALIGNMENT);
-        tip1.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        tip2.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        tip3.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        tip1.setFont(new Font("SansSerif", Font.PLAIN, 15));
+        tip2.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        tip3.setFont(new Font("SansSerif", Font.PLAIN, 15));
 
         panel.add(tip1);
         panel.add(Box.createVerticalStrut(4));

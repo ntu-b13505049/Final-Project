@@ -158,16 +158,26 @@ public class AdminService {
                         OR LOWER(COALESCE(b.edition, '')) LIKE ?
                         OR LOWER(COALESCE(b.source, '')) LIKE ?
                         OR LOWER(COALESCE(b.note, '')) LIKE ?
+                        OR LOWER(COALESCE((SELECT GROUP_CONCAT(isbn, ', ') FROM book_isbns WHERE book_id = b.book_id), '')) LIKE ?
+                        OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(COALESCE((SELECT GROUP_CONCAT(isbn, '') FROM book_isbns WHERE book_id = b.book_id), '')), '-', ''), ' ', ''), ',', ''), 'isbn', '') LIKE ?
                         OR EXISTS (
                             SELECT 1 FROM book_isbns bi
-                            WHERE bi.book_id = b.book_id AND LOWER(bi.isbn) LIKE ?
+                            WHERE bi.book_id = b.book_id
+                              AND (
+                                  LOWER(bi.isbn) LIKE ?
+                                  OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(bi.isbn), '-', ''), ' ', ''), ',', ''), 'isbn', '') LIKE ?
+                              )
                         )
                     )
                     """);
             String pattern = like(keyword);
+            String isbnPattern = isbnLike(keyword);
             for (int i = 0; i < 10; i++) {
                 params.add(pattern);
             }
+            params.add(isbnPattern);
+            params.add(pattern);
+            params.add(isbnPattern);
         }
 
         String status = statusFilter == null ? "" : statusFilter.trim().toUpperCase();
@@ -767,5 +777,10 @@ public class AdminService {
     private String like(String input) {
         String normalized = normalize(input);
         return normalized.isBlank() ? "" : "%" + normalized + "%";
+    }
+
+    private String isbnLike(String input) {
+        String normalized = input == null ? "" : input.replaceAll("[^0-9Xx]", "").toLowerCase();
+        return normalized.isBlank() ? like(input) : "%" + normalized + "%";
     }
 }
