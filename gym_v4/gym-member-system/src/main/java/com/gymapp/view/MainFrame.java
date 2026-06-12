@@ -4,6 +4,7 @@ import com.gymapp.model.Member;
 import com.gymapp.model.Role;
 import com.gymapp.model.Trainer;
 import com.gymapp.model.User;
+import com.gymapp.util.UiUtil;
 import com.gymapp.view.panel.*;
 
 import javax.swing.*;
@@ -14,12 +15,15 @@ public class MainFrame extends JFrame {
     private final JTabbedPane tabs = new JTabbedPane();
 
     public MainFrame(User currentUser) {
+        this(currentUser, null, JFrame.NORMAL);
+    }
+
+    public MainFrame(User currentUser, Rectangle bounds, int extendedState) {
         super("健身房會員系統 - " + currentUser.getDisplayRole() + "：" + currentUser.getName());
         this.currentUser = currentUser;
         buildUi();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1180, 760);
-        setLocationRelativeTo(null);
+        UiUtil.prepareFrame(this, bounds, extendedState);
     }
 
     private void buildUi() {
@@ -31,12 +35,14 @@ public class MainFrame extends JFrame {
 
     private JPanel header() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
         JLabel label = new JLabel("登入者：" + currentUser.getName() + " / " + currentUser.getDisplayRole());
-        label.setFont(label.getFont().deriveFont(Font.BOLD, 15f));
+        label.setFont(label.getFont().deriveFont(Font.BOLD, 17f));
         JButton logout = new JButton("登出");
         logout.addActionListener(e -> {
-            new LoginFrame(new com.gymapp.service.AuthService()).setVisible(true);
+            Rectangle bounds = getBounds();
+            int state = getExtendedState();
+            new LoginFrame(new com.gymapp.service.AuthService(), bounds, state).setVisible(true);
             dispose();
         });
         panel.add(label, BorderLayout.WEST);

@@ -8,6 +8,7 @@ import com.gymapp.util.UiUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 
 public class LoginFrame extends JFrame {
     private final AuthService authService;
@@ -17,26 +18,29 @@ public class LoginFrame extends JFrame {
     private final JLabel statusLabel = new JLabel("SQLite 資料庫尚未檢查");
 
     public LoginFrame(AuthService authService) {
+        this(authService, null, JFrame.NORMAL);
+    }
+
+    public LoginFrame(AuthService authService, Rectangle bounds, int extendedState) {
         super("健身房會員系統 - 登入");
         this.authService = authService;
         buildUi();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(460, 300);
-        setLocationRelativeTo(null);
+        UiUtil.prepareFrame(this, bounds, extendedState);
         SwingUtilities.invokeLater(this::initDatabase);
     }
 
     private void buildUi() {
         JPanel root = new JPanel(new BorderLayout(10, 10));
-        root.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+        root.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         JLabel title = new JLabel("健身房會員系統", SwingConstants.CENTER);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 24f));
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 32f));
         root.add(title, BorderLayout.NORTH);
 
         JPanel form = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.insets = new Insets(8, 8, 8, 8);
         gbc.anchor = GridBagConstraints.WEST;
 
         gbc.gridx = 0; gbc.gridy = 0; form.add(new JLabel("帳號"), gbc);
@@ -50,7 +54,7 @@ public class LoginFrame extends JFrame {
 
         JButton loginButton = new JButton("登入");
         JButton initButton = new JButton("建立/檢查 SQLite 資料庫");
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 6));
         buttons.add(initButton);
         buttons.add(loginButton);
 
@@ -62,6 +66,15 @@ public class LoginFrame extends JFrame {
 
         initButton.addActionListener(e -> initDatabase());
         loginButton.addActionListener(e -> login());
+        accountField.addActionListener(e -> login());
+        passwordField.addActionListener(e -> login());
+        roleBox.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "login");
+        roleBox.getActionMap().put("login", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                login();
+            }
+        });
         getRootPane().setDefaultButton(loginButton);
         setContentPane(root);
     }
@@ -83,8 +96,10 @@ public class LoginFrame extends JFrame {
         try {
             Role role = Role.fromDisplayName((String) roleBox.getSelectedItem());
             User user = authService.login(accountField.getText(), new String(passwordField.getPassword()), role);
+            Rectangle bounds = getBounds();
+            int state = getExtendedState();
             SwingUtilities.invokeLater(() -> {
-                MainFrame main = new MainFrame(user);
+                MainFrame main = new MainFrame(user, bounds, state);
                 main.setVisible(true);
                 dispose();
             });

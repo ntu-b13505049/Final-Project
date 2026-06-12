@@ -36,7 +36,9 @@ public class ReservationPanel extends BasePanel {
 
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(BorderFactory.createTitledBorder("課程探索 / 預約"));
-        top.add(scroll(courseTable), BorderLayout.CENTER);
+        JScrollPane courseScroll = scroll(courseTable);
+        top.add(UiUtil.autoSearchPanel("輸入課程ID、名稱、類型、教練ID、場館ID 或時間", courseTable), BorderLayout.NORTH);
+        top.add(courseScroll, BorderLayout.CENTER);
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controls.add(new JLabel("會員ID"));
@@ -53,10 +55,10 @@ public class ReservationPanel extends BasePanel {
         bottom.setResizeWeight(0.65);
         JPanel reservationPanel = new JPanel(new BorderLayout());
         reservationPanel.setBorder(BorderFactory.createTitledBorder(user.hasRole(Role.MEMBER) ? "我的預約" : "預約紀錄"));
-        reservationPanel.add(scroll(reservationTable), BorderLayout.CENTER);
+        reservationPanel.add(tablePanel(reservationTable, "輸入預約ID、會員ID、課程ID、狀態、扣點或時間"), BorderLayout.CENTER);
         JPanel waitlistPanel = new JPanel(new BorderLayout());
         waitlistPanel.setBorder(BorderFactory.createTitledBorder("所選課程候補名單"));
-        waitlistPanel.add(scroll(waitlistTable), BorderLayout.CENTER);
+        waitlistPanel.add(tablePanel(waitlistTable, "輸入候補ID、課程ID、會員ID、狀態或時間"), BorderLayout.CENTER);
         bottom.setLeftComponent(reservationPanel);
         bottom.setRightComponent(waitlistPanel);
 
@@ -67,6 +69,14 @@ public class ReservationPanel extends BasePanel {
         reserve.addActionListener(e -> reserveCourse());
         cancel.addActionListener(e -> cancelReservation());
         refresh.addActionListener(e -> refreshData());
+        if (!user.hasRole(Role.MEMBER)) {
+            UiUtil.onTextChanged(memberIdField, () -> {
+                String text = memberIdField.getText().trim();
+                if (text.isEmpty() || text.matches("\\d+")) {
+                    refreshData();
+                }
+            });
+        }
         courseTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && courseTable.getSelectedRow() >= 0) refreshWaitlist();
         });
@@ -116,9 +126,14 @@ public class ReservationPanel extends BasePanel {
             }
             setRows(courseModel, courseRows);
 
-            List<Reservation> reservations = user.hasRole(Role.MEMBER)
-                    ? reservationService.getReservationDAO().findByMember(user.getId())
-                    : reservationService.getReservationDAO().findAll();
+            List<Reservation> reservations;
+            if (user.hasRole(Role.MEMBER)) {
+                reservations = reservationService.getReservationDAO().findByMember(user.getId());
+            } else if (memberIdField.getText() != null && !memberIdField.getText().isBlank()) {
+                reservations = reservationService.getReservationDAO().findByMember(UiUtil.intValue(memberIdField.getText(), "會員ID"));
+            } else {
+                reservations = reservationService.getReservationDAO().findAll();
+            }
             List<Object[]> reservationRows = new ArrayList<>();
             for (Reservation r : reservations) {
                 reservationRows.add(new Object[]{r.getReservationId(), r.getMemberId(), r.getCourseId(), r.getStatus(), r.getPointsDeducted(), DateTimeUtil.format(r.getCreatedTime())});

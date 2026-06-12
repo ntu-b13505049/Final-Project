@@ -40,10 +40,10 @@ public class AccessPanel extends BasePanel {
         split.setResizeWeight(0.45);
         JPanel branches = new JPanel(new BorderLayout());
         branches.setBorder(BorderFactory.createTitledBorder("場館容留狀態"));
-        branches.add(scroll(branchTable), BorderLayout.CENTER);
+        branches.add(tablePanel(branchTable, "輸入場館ID、名稱或人數"), BorderLayout.CENTER);
         JPanel logs = new JPanel(new BorderLayout());
         logs.setBorder(BorderFactory.createTitledBorder(user.hasRole(Role.MEMBER) ? "我的進出場紀錄" : "進出場紀錄"));
-        logs.add(scroll(logTable), BorderLayout.CENTER);
+        logs.add(tablePanel(logTable, "輸入紀錄ID、會員ID、場館ID、動作或時間"), BorderLayout.CENTER);
         split.setTopComponent(branches);
         split.setBottomComponent(logs);
         add(split, BorderLayout.CENTER);
@@ -60,6 +60,14 @@ public class AccessPanel extends BasePanel {
         in.addActionListener(e -> checkIn());
         out.addActionListener(e -> checkOut());
         refresh.addActionListener(e -> refreshData());
+        if (!user.hasRole(Role.MEMBER)) {
+            UiUtil.onTextChanged(memberIdField, () -> {
+                String text = memberIdField.getText().trim();
+                if (text.isEmpty() || text.matches("\\d+")) {
+                    refreshData();
+                }
+            });
+        }
     }
 
     private int memberId() {

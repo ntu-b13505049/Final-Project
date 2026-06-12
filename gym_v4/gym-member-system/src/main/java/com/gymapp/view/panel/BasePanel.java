@@ -31,9 +31,24 @@ public abstract class BasePanel extends JPanel implements Refreshable {
     }
 
     protected JScrollPane scroll(JTable table) {
+        UiUtil.styleTable(table);
         table.setAutoCreateRowSorter(true);
         table.setFillsViewportHeight(true);
         return new JScrollPane(table);
+    }
+
+    protected JPanel tablePanel(JTable table, String searchHint) {
+        JPanel panel = new JPanel(new BorderLayout(6, 6));
+        JScrollPane scrollPane = scroll(table);
+        panel.add(UiUtil.autoSearchPanel(searchHint, table), BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
+    }
+
+    protected JPanel tablePanel(String title, JTable table, String searchHint) {
+        JPanel panel = tablePanel(table, searchHint);
+        panel.setBorder(BorderFactory.createTitledBorder(title));
+        return panel;
     }
 
     protected void showError(Exception e) {

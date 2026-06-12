@@ -30,7 +30,7 @@ public class TrainerPanel extends BasePanel {
     }
 
     private void buildUi() {
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入姓名、帳號、角色、專長或場館ID"), BorderLayout.CENTER);
         idField.setEditable(false);
         JPanel form = UiUtil.formPanel();
         UiUtil.addField(form, 0, "ID", idField);

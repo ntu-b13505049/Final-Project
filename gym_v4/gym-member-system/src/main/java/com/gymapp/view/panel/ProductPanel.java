@@ -44,10 +44,10 @@ public class ProductPanel extends BasePanel {
         split.setResizeWeight(0.62);
         JPanel p1 = new JPanel(new BorderLayout());
         p1.setBorder(BorderFactory.createTitledBorder("商品清單"));
-        p1.add(scroll(productTable), BorderLayout.CENTER);
+        p1.add(tablePanel(productTable, "輸入商品ID、品名、類別、單價或庫存"), BorderLayout.CENTER);
         JPanel p2 = new JPanel(new BorderLayout());
         p2.setBorder(BorderFactory.createTitledBorder("銷售紀錄"));
-        p2.add(scroll(saleTable), BorderLayout.CENTER);
+        p2.add(tablePanel(saleTable, "輸入銷售ID、會員ID、商品ID、數量、總額或時間"), BorderLayout.CENTER);
         split.setTopComponent(p1);
         split.setBottomComponent(p2);
         add(split, BorderLayout.CENTER);
