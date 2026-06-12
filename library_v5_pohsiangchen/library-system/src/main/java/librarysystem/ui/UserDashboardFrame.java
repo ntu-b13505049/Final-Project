@@ -373,20 +373,21 @@ public class UserDashboardFrame extends JFrame {
     }
 
     private JPanel createSearchConditionPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = new JPanel(new BorderLayout(12, 0));
         panel.setBorder(BorderFactory.createTitledBorder("查詢條件"));
 
-        titleField = new JTextField(12);
-        authorField = new JTextField(12);
-        subjectField = new JTextField(12);
-        publisherField = new JTextField(12);
-        isbnField = new JTextField(12);
+        JPanel fieldsPanel = new JPanel(new GridBagLayout());
+        titleField = new JTextField(14);
+        authorField = new JTextField(14);
+        subjectField = new JTextField(14);
+        publisherField = new JTextField(14);
+        isbnField = new JTextField(14);
 
-        addSearchField(panel, 0, "題名", titleField);
-        addSearchField(panel, 1, "作者", authorField);
-        addSearchField(panel, 2, "主題", subjectField);
-        addSearchField(panel, 3, "出版者", publisherField);
-        addSearchField(panel, 4, "ISBN", isbnField);
+        addSearchField(fieldsPanel, 0, "題名", titleField);
+        addSearchField(fieldsPanel, 1, "作者", authorField);
+        addSearchField(fieldsPanel, 2, "主題", subjectField);
+        addSearchField(fieldsPanel, 3, "出版者", publisherField);
+        addSearchField(fieldsPanel, 4, "ISBN", isbnField);
 
         JButton searchButton = new JButton("查詢");
         JButton resetButton = new JButton("清空條件");
@@ -400,16 +401,12 @@ public class UserDashboardFrame extends JFrame {
             refreshSearchResults();
         });
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 5;
-        gbc.gridy = 0;
-        gbc.gridheight = 2;
-        gbc.insets = new Insets(6, 6, 6, 6);
-        gbc.fill = GridBagConstraints.BOTH;
         JPanel btnPanel = new JPanel(new GridLayout(2, 1, 6, 6));
         btnPanel.add(searchButton);
         btnPanel.add(resetButton);
-        panel.add(btnPanel, gbc);
+
+        panel.add(fieldsPanel, BorderLayout.CENTER);
+        panel.add(btnPanel, BorderLayout.EAST);
         return panel;
     }
 
