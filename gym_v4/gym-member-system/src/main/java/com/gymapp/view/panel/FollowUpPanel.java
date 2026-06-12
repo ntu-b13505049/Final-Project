@@ -42,7 +42,7 @@ public class FollowUpPanel extends BasePanel {
             trainerIdField.setEditable(false);
         }
         idField.setEditable(false);
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入會員ID、教練ID、目標、狀況、日期或建議"), BorderLayout.CENTER);
         JPanel form = UiUtil.formPanel();
         UiUtil.addField(form, 0, "追蹤ID", idField);
         UiUtil.addField(form, 1, "會員ID", memberIdField);

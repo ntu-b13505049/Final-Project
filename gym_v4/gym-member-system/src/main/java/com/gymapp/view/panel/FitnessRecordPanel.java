@@ -50,10 +50,10 @@ public class FitnessRecordPanel extends BasePanel {
         split.setResizeWeight(0.62);
         JPanel records = new JPanel(new BorderLayout());
         records.setBorder(BorderFactory.createTitledBorder("健身狀況紀錄（體重、體脂、肌肉量、訓練內容與建議）"));
-        records.add(scroll(recordTable), BorderLayout.CENTER);
+        records.add(tablePanel(recordTable, "輸入紀錄ID、會員ID、教練ID、體重、訓練內容或建議"), BorderLayout.CENTER);
         JPanel logs = new JPanel(new BorderLayout());
         logs.setBorder(BorderFactory.createTitledBorder("運動執行紀錄"));
-        logs.add(scroll(logTable), BorderLayout.CENTER);
+        logs.add(tablePanel(logTable, "輸入流水號、會員ID、動作、重量、次數或時間"), BorderLayout.CENTER);
         split.setTopComponent(records);
         split.setBottomComponent(logs);
         add(split, BorderLayout.CENTER);

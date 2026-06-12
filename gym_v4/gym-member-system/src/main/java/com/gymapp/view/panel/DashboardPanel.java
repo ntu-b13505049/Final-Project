@@ -34,8 +34,8 @@ public class DashboardPanel extends BasePanel {
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         split.setResizeWeight(0.38);
-        split.setTopComponent(panelWithTitle("場館即時人數（由進出場紀錄動態計算）", new JTable(branchModel)));
-        split.setBottomComponent(panelWithTitle("近期課程", new JTable(courseModel)));
+        split.setTopComponent(panelWithTitle("場館即時人數（由進出場紀錄動態計算）", new JTable(branchModel), "輸入場館名稱或人數"));
+        split.setBottomComponent(panelWithTitle("近期課程", new JTable(courseModel), "輸入課程、類型、教練、場館或時間"));
         add(split, BorderLayout.CENTER);
 
         JButton refresh = new JButton("重新整理");
@@ -46,11 +46,8 @@ public class DashboardPanel extends BasePanel {
         add(south, BorderLayout.SOUTH);
     }
 
-    private JPanel panelWithTitle(String title, JTable table) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBorder(BorderFactory.createTitledBorder(title));
-        p.add(scroll(table), BorderLayout.CENTER);
-        return p;
+    private JPanel panelWithTitle(String title, JTable table, String searchHint) {
+        return tablePanel(title, table, searchHint);
     }
 
     @Override

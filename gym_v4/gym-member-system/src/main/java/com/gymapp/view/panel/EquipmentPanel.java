@@ -32,7 +32,7 @@ public class EquipmentPanel extends BasePanel {
     }
 
     private void buildUi() {
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入器材名稱、類型、狀態、日期或場館ID"), BorderLayout.CENTER);
         idField.setEditable(false);
         JPanel form = UiUtil.formPanel();
         UiUtil.addField(form, 0, "器材ID", idField);

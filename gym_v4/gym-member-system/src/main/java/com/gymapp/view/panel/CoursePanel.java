@@ -36,7 +36,7 @@ public class CoursePanel extends BasePanel {
     }
 
     private void buildUi() {
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入課程名稱、類型、教練ID、場館ID 或時間"), BorderLayout.CENTER);
         if (editable) {
             idField.setEditable(false);
             JPanel form = UiUtil.formPanel();

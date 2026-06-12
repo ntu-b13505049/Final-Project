@@ -32,7 +32,7 @@ public class BranchPanel extends BasePanel {
     }
 
     private void buildUi() {
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入場館ID、名稱或人數"), BorderLayout.CENTER);
         if (editable) {
             idField.setEditable(false);
             JPanel form = UiUtil.formPanel();

@@ -54,10 +54,18 @@ public class WalletPanel extends BasePanel {
         top.add(depositCustom);
         top.add(refresh);
         add(top, BorderLayout.NORTH);
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入交易ID、會員ID、類別、點數、時間或備註"), BorderLayout.CENTER);
         depositPlan.addActionListener(e -> depositByPlan());
         depositCustom.addActionListener(e -> depositCustom());
         refresh.addActionListener(e -> refreshData());
+        if (!user.hasRole(Role.MEMBER)) {
+            UiUtil.onTextChanged(memberIdField, () -> {
+                String text = memberIdField.getText().trim();
+                if (text.isEmpty() || text.matches("\\d+")) {
+                    refreshData();
+                }
+            });
+        }
     }
 
     private Integer currentMemberIdOrNullForList() {

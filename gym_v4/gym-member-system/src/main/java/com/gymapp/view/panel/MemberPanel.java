@@ -30,7 +30,7 @@ public class MemberPanel extends BasePanel {
     }
 
     private void buildUi() {
-        add(scroll(table), BorderLayout.CENTER);
+        add(tablePanel(table, "輸入姓名、帳號、手機、Email 或狀態"), BorderLayout.CENTER);
         idField.setEditable(false);
         JPanel form = UiUtil.formPanel();
         UiUtil.addField(form, 0, "ID", idField);
