@@ -57,6 +57,7 @@ public class TrainerPanel extends BasePanel {
         add.addActionListener(e -> addStaff());
         update.addActionListener(e -> updateStaff());
         delete.addActionListener(e -> deleteStaff());
+        UiUtil.installDeleteShortcut(table, this::deleteStaff);
         clear.addActionListener(e -> clearForm());
         refresh.addActionListener(e -> refreshData());
     }

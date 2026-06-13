@@ -60,6 +60,7 @@ public class EquipmentPanel extends BasePanel {
         add.addActionListener(e -> addEquipment());
         update.addActionListener(e -> updateEquipment());
         delete.addActionListener(e -> deleteEquipment());
+        UiUtil.installDeleteShortcut(table, this::deleteEquipment);
         maintained.addActionListener(e -> maintained());
         refresh.addActionListener(e -> refreshData());
     }
@@ -98,14 +99,17 @@ public class EquipmentPanel extends BasePanel {
 
     private void maintained() {
         try {
-            Equipment e = readForm(true);
+            int id = idField.getText() == null || idField.getText().isBlank()
+                    ? selectedId(table, 0)
+                    : UiUtil.intValue(idField.getText(), "器材ID");
             LocalDate today = LocalDate.now();
-            e.setLastMaintenanceDate(today);
-            e.setNextMaintenanceDate(today.plusDays(90));
-            e.setStatus("正常");
-            equipmentDAO.update(e);
+            LocalDate next = today.plusDays(90);
+            equipmentDAO.completeMaintenance(id, today, next);
+            statusBox.setSelectedItem("正常");
+            lastField.setText(DateTimeUtil.format(today));
+            nextField.setText(DateTimeUtil.format(next));
             refreshData();
-            UiUtil.info(this, "已更新維護日期與狀態");
+            UiUtil.info(this, "已完成維護：上次維護日期更新為 " + DateTimeUtil.format(today) + "，下次維護日期更新為 " + DateTimeUtil.format(next));
         } catch (Exception e) { showError(e); }
     }
 

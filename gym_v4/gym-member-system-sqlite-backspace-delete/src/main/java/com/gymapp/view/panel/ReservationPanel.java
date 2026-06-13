@@ -36,9 +36,7 @@ public class ReservationPanel extends BasePanel {
 
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(BorderFactory.createTitledBorder("課程探索 / 預約"));
-        JScrollPane courseScroll = scroll(courseTable);
-        top.add(UiUtil.autoSearchPanel("輸入課程ID、名稱、類型、教練ID、場館ID 或時間", courseTable), BorderLayout.NORTH);
-        top.add(courseScroll, BorderLayout.CENTER);
+        top.add(tablePanel(courseTable, "輸入課程ID、名稱、類型、教練ID、場館ID 或時間"), BorderLayout.CENTER);
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controls.add(new JLabel("會員ID"));
@@ -68,6 +66,7 @@ public class ReservationPanel extends BasePanel {
 
         reserve.addActionListener(e -> reserveCourse());
         cancel.addActionListener(e -> cancelReservation());
+        UiUtil.installDeleteShortcut(reservationTable, this::cancelReservation);
         refresh.addActionListener(e -> refreshData());
         if (!user.hasRole(Role.MEMBER)) {
             UiUtil.onTextChanged(memberIdField, () -> {

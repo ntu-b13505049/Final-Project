@@ -1,9 +1,11 @@
 package com.gymapp.view.panel;
 
+import com.gymapp.dao.MemberDAO;
 import com.gymapp.model.*;
 import com.gymapp.service.ProductService;
 import com.gymapp.util.DateTimeUtil;
 import com.gymapp.util.UiUtil;
+import com.gymapp.view.MainFrame;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -14,6 +16,7 @@ import java.util.List;
 public class ProductPanel extends BasePanel {
     private final User user;
     private final ProductService productService = new ProductService();
+    private final MemberDAO memberDAO = new MemberDAO();
     private final DefaultTableModel productModel = UiUtil.readOnlyModel(new String[]{"商品ID", "品名", "類別", "單價/點數", "庫存"});
     private final DefaultTableModel saleModel = UiUtil.readOnlyModel(new String[]{"銷售ID", "會員ID", "商品ID", "數量", "總額", "銷售員ID", "時間"});
     private final JTable productTable = new JTable(productModel);
@@ -24,6 +27,7 @@ public class ProductPanel extends BasePanel {
     private final JTextField priceField = new JTextField("100", 8);
     private final JTextField stockField = new JTextField("10", 8);
     private final JTextField memberIdField = new JTextField(8);
+    private final JLabel balanceLabel = new JLabel("餘額：--");
     private final JTextField quantityField = new JTextField("1", 5);
     private final JCheckBox useWalletBox = new JCheckBox("使用會員錢包扣點", true);
 
@@ -60,8 +64,9 @@ public class ProductPanel extends BasePanel {
         UiUtil.addField(form, 3, "單價/點數", priceField);
         UiUtil.addField(form, 4, "庫存", stockField);
         UiUtil.addField(form, 5, "購買會員ID", memberIdField);
-        UiUtil.addField(form, 6, "數量", quantityField);
-        UiUtil.addField(form, 7, "付款", useWalletBox);
+        UiUtil.addField(form, 6, "目前餘額", balanceLabel);
+        UiUtil.addField(form, 7, "數量", quantityField);
+        UiUtil.addField(form, 8, "付款", useWalletBox);
         JButton add = new JButton("新增商品");
         JButton update = new JButton("修改商品");
         JButton delete = new JButton("刪除商品");
@@ -79,9 +84,13 @@ public class ProductPanel extends BasePanel {
         add(east, BorderLayout.EAST);
 
         productTable.getSelectionModel().addListSelectionListener(e -> { if (!e.getValueIsAdjusting() && productTable.getSelectedRow() >= 0) fillFromSelected(); });
+        UiUtil.onTextChanged(memberIdField, this::refreshPurchaseBalance);
         add.addActionListener(e -> addProduct());
         update.addActionListener(e -> updateProduct());
         delete.addActionListener(e -> deleteProduct());
+        if (!user.hasRole(Role.MEMBER)) {
+            UiUtil.installDeleteShortcut(productTable, this::deleteProduct);
+        }
         sell.addActionListener(e -> sellProduct());
         refresh.addActionListener(e -> refreshData());
     }
@@ -117,9 +126,34 @@ public class ProductPanel extends BasePanel {
             Integer memberId = UiUtil.nullableInt(memberIdField.getText());
             Integer soldBy = user.hasRole(Role.MEMBER) ? null : user.getId();
             String msg = productService.sell(productId, qty, memberId, soldBy, useWalletBox.isSelected());
-            UiUtil.info(this, msg);
             refreshData();
+            refreshRelatedTabs();
+            if (useWalletBox.isSelected() && memberId != null) {
+                msg += "\n" + balanceLabel.getText();
+            }
+            UiUtil.info(this, msg);
         } catch (Exception e) { showError(e); }
+    }
+
+    private void refreshPurchaseBalance() {
+        try {
+            Integer memberId = UiUtil.nullableInt(memberIdField.getText());
+            if (memberId == null) {
+                balanceLabel.setText("餘額：未指定會員");
+                return;
+            }
+            Member member = memberDAO.findById(memberId).orElse(null);
+            balanceLabel.setText(member == null ? "餘額：找不到會員" : "餘額：" + member.getWallet().getBalance());
+        } catch (Exception e) {
+            balanceLabel.setText("餘額：會員ID格式錯誤");
+        }
+    }
+
+    private void refreshRelatedTabs() {
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window instanceof MainFrame mainFrame) {
+            mainFrame.refreshAllTabs();
+        }
     }
 
     @Override
@@ -135,6 +169,7 @@ public class ProductPanel extends BasePanel {
                 sales.add(new Object[]{s.getSaleId(), s.getMemberId() == null ? "" : s.getMemberId(), s.getProductId(), s.getQuantity(), s.getTotalAmount(), s.getSoldBy() == null ? "" : s.getSoldBy(), DateTimeUtil.format(s.getTimestamp())});
             }
             setRows(saleModel, sales);
+            refreshPurchaseBalance();
         } catch (Exception e) { showError(e); }
     }
 }

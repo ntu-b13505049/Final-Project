@@ -34,31 +34,41 @@ public class WalletPanel extends BasePanel {
     }
 
     private void buildUi() {
-        if (user.hasRole(Role.MEMBER)) {
+        boolean member = user.hasRole(Role.MEMBER);
+        if (member) {
             memberIdField.setText(String.valueOf(user.getId()));
             memberIdField.setEditable(false);
         }
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        top.setBorder(BorderFactory.createTitledBorder("會員儲值方案 / 電子錢包"));
+        top.setBorder(BorderFactory.createTitledBorder(member ? "電子錢包餘額 / 交易紀錄" : "會員儲值方案 / 電子錢包"));
         top.add(new JLabel("會員ID"));
         top.add(memberIdField);
         top.add(balanceLabel);
-        top.add(new JLabel("方案"));
-        top.add(planBox);
-        JButton depositPlan = new JButton("依方案儲值");
-        top.add(depositPlan);
-        top.add(new JLabel("自訂點數"));
-        top.add(customPointsField);
-        JButton depositCustom = new JButton("自訂儲值");
+
         JButton refresh = new JButton("刷新");
-        top.add(depositCustom);
-        top.add(refresh);
+        if (member) {
+            JLabel note = new JLabel("會員端已移除儲值操作；如需儲值請由管理員或櫃台處理。此頁僅供查看餘額與交易紀錄。");
+            note.setForeground(Color.GRAY);
+            top.add(note);
+            top.add(refresh);
+        } else {
+            top.add(new JLabel("方案"));
+            top.add(planBox);
+            JButton depositPlan = new JButton("依方案儲值");
+            top.add(depositPlan);
+            top.add(new JLabel("自訂點數"));
+            top.add(customPointsField);
+            JButton depositCustom = new JButton("自訂儲值");
+            top.add(depositCustom);
+            top.add(refresh);
+            depositPlan.addActionListener(e -> depositByPlan());
+            depositCustom.addActionListener(e -> depositCustom());
+        }
+
         add(top, BorderLayout.NORTH);
         add(tablePanel(table, "輸入交易ID、會員ID、類別、點數、時間或備註"), BorderLayout.CENTER);
-        depositPlan.addActionListener(e -> depositByPlan());
-        depositCustom.addActionListener(e -> depositCustom());
         refresh.addActionListener(e -> refreshData());
-        if (!user.hasRole(Role.MEMBER)) {
+        if (!member) {
             UiUtil.onTextChanged(memberIdField, () -> {
                 String text = memberIdField.getText().trim();
                 if (text.isEmpty() || text.matches("\\d+")) {
@@ -100,8 +110,10 @@ public class WalletPanel extends BasePanel {
     @Override
     public void refreshData() {
         try {
-            planBox.removeAllItems();
-            for (RechargePlan p : walletService.getPlans()) planBox.addItem(p);
+            if (!user.hasRole(Role.MEMBER)) {
+                planBox.removeAllItems();
+                for (RechargePlan p : walletService.getPlans()) planBox.addItem(p);
+            }
             Integer memberId = currentMemberIdOrNullForList();
             if (memberId != null) {
                 Member m = memberDAO.findById(memberId).orElse(null);

@@ -65,6 +65,7 @@ public class CoursePanel extends BasePanel {
             add.addActionListener(e -> addCourse());
             update.addActionListener(e -> updateCourse());
             delete.addActionListener(e -> deleteCourse());
+            UiUtil.installDeleteShortcut(table, this::deleteCourse);
             clear.addActionListener(e -> clearForm());
             refresh.addActionListener(e -> refreshData());
         } else {
