@@ -26,6 +26,20 @@ public class WorkoutLogDAO {
         });
     }
 
+    public void update(WorkoutLog log) throws SQLException {
+        Db.update("UPDATE workout_logs SET member_id=?, exercise_name=?, weight=?, reps=? WHERE log_id=?", ps -> {
+            ps.setInt(1, log.getMemberId());
+            ps.setString(2, log.getExerciseName());
+            ps.setFloat(3, log.getWeight());
+            ps.setInt(4, log.getReps());
+            ps.setInt(5, log.getLogId());
+        });
+    }
+
+    public void delete(int id) throws SQLException {
+        Db.update("DELETE FROM workout_logs WHERE log_id=?", ps -> ps.setInt(1, id));
+    }
+
     private WorkoutLog map(ResultSet rs) throws SQLException {
         return new WorkoutLog(rs.getInt("log_id"), rs.getInt("member_id"), rs.getString("exercise_name"),
                 rs.getFloat("weight"), rs.getInt("reps"), DateTimeUtil.fromDbTimestamp(rs, "workout_time"));

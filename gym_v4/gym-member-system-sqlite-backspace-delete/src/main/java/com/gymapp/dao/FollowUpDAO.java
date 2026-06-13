@@ -4,8 +4,11 @@ import com.gymapp.database.Db;
 import com.gymapp.model.FollowUpRecord;
 import com.gymapp.util.DateTimeUtil;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.time.LocalDate;
 import java.util.List;
 
 public class FollowUpDAO {
@@ -23,7 +26,7 @@ public class FollowUpDAO {
             if (r.getTrainerId() == null) ps.setNull(2, java.sql.Types.INTEGER); else ps.setInt(2, r.getTrainerId());
             ps.setString(3, r.getGoal());
             ps.setString(4, r.getCurrentStatus());
-            ps.setDate(5, DateTimeUtil.toSqlDate(r.getNextFollowDate()));
+            setDateText(ps, 5, r.getNextFollowDate());
             ps.setString(6, r.getSuggestion());
         });
     }
@@ -34,7 +37,7 @@ public class FollowUpDAO {
             if (r.getTrainerId() == null) ps.setNull(2, java.sql.Types.INTEGER); else ps.setInt(2, r.getTrainerId());
             ps.setString(3, r.getGoal());
             ps.setString(4, r.getCurrentStatus());
-            ps.setDate(5, DateTimeUtil.toSqlDate(r.getNextFollowDate()));
+            setDateText(ps, 5, r.getNextFollowDate());
             ps.setString(6, r.getSuggestion());
             ps.setInt(7, r.getFollowId());
         });
@@ -42,6 +45,14 @@ public class FollowUpDAO {
 
     public void delete(int id) throws SQLException {
         Db.update("DELETE FROM follow_up_records WHERE follow_id=?", ps -> ps.setInt(1, id));
+    }
+
+    private void setDateText(PreparedStatement ps, int index, LocalDate date) throws SQLException {
+        if (date == null) {
+            ps.setNull(index, Types.VARCHAR);
+        } else {
+            ps.setString(index, DateTimeUtil.format(date));
+        }
     }
 
     private FollowUpRecord map(ResultSet rs) throws SQLException {

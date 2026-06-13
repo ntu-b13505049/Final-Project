@@ -2,6 +2,8 @@ package com.gymapp.dao;
 
 import com.gymapp.database.Db;
 import com.gymapp.model.Branch;
+import com.gymapp.model.BranchOccupant;
+import com.gymapp.util.DateTimeUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,6 +55,23 @@ public class BranchDAO {
             ps.setInt(1, current);
             ps.setInt(2, branchId);
         });
+    }
+
+    public List<BranchOccupant> findCurrentOccupants(Integer branchId) throws SQLException {
+        String sql = "SELECT l.branch_id, COALESCE(b.branch_name, '') AS branch_name, " +
+                "m.id AS member_id, m.name AS member_name, m.account, m.status, l.timestamp AS entered_at " +
+                "FROM access_log l " +
+                "JOIN (SELECT member_id, MAX(log_id) AS max_id FROM access_log GROUP BY member_id) latest " +
+                "ON latest.max_id = l.log_id " +
+                "JOIN member_info m ON m.id = l.member_id " +
+                "LEFT JOIN branch_info b ON b.branch_id = l.branch_id " +
+                "WHERE l.action = '進場'" +
+                (branchId == null ? " " : " AND l.branch_id = ? ") +
+                "ORDER BY l.branch_id, l.timestamp DESC, m.id";
+        return Db.query(sql, branchId == null ? null : ps -> ps.setInt(1, branchId), rs ->
+                new BranchOccupant(rs.getInt("branch_id"), rs.getString("branch_name"), rs.getInt("member_id"),
+                        rs.getString("member_name"), rs.getString("account"), rs.getString("status"),
+                        DateTimeUtil.fromDbTimestamp(rs, "entered_at")));
     }
 
     private Branch map(ResultSet rs) throws SQLException {

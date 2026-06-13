@@ -31,6 +31,7 @@ public class MainFrame extends JFrame {
         add(header(), BorderLayout.NORTH);
         add(tabs, BorderLayout.CENTER);
         buildTabsByRole();
+        tabs.addChangeListener(e -> refreshSelectedTab());
     }
 
     private JPanel header() {
@@ -75,11 +76,27 @@ public class MainFrame extends JFrame {
             Member member = (Member) currentUser;
             tabs.addTab("個人資料", new ProfilePanel(member));
             tabs.addTab("課程預約", new ReservationPanel(currentUser));
-            tabs.addTab("電子錢包", new WalletPanel(currentUser));
+            tabs.addTab("錢包紀錄", new WalletPanel(currentUser));
             tabs.addTab("商品購買", new ProductPanel(currentUser));
             tabs.addTab("健身紀錄", new FitnessRecordPanel(currentUser));
             tabs.addTab("追蹤建議", new FollowUpPanel(currentUser));
             tabs.addTab("進出場", new AccessPanel(currentUser));
         }
     }
+    public void refreshSelectedTab() {
+        Component selected = tabs.getSelectedComponent();
+        if (selected instanceof Refreshable refreshable) {
+            refreshable.refreshData();
+        }
+    }
+
+    public void refreshAllTabs() {
+        for (int i = 0; i < tabs.getTabCount(); i++) {
+            Component component = tabs.getComponentAt(i);
+            if (component instanceof Refreshable refreshable) {
+                refreshable.refreshData();
+            }
+        }
+    }
+
 }

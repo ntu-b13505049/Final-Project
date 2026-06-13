@@ -63,6 +63,7 @@ public class MemberPanel extends BasePanel {
         add.addActionListener(e -> addMember());
         update.addActionListener(e -> updateMember());
         delete.addActionListener(e -> deleteMember());
+        UiUtil.installDeleteShortcut(table, this::deleteMember);
         clear.addActionListener(e -> clearForm());
         refresh.addActionListener(e -> refreshData());
     }
