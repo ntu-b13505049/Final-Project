@@ -147,7 +147,7 @@ public class AdminDashboardFrame extends JFrame {
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton refreshButton = new JButton("重新整理後台資料");
-        JButton webButton = new JButton("啟動 Web 報表");
+        JButton webButton = new JButton("啟動 Web 管理頁");
         JButton logoutButton = new JButton("登出");
         refreshButton.addActionListener(e -> refreshAllData());
         webButton.addActionListener(e -> startWebDashboard());
@@ -723,7 +723,7 @@ public class AdminDashboardFrame extends JFrame {
     }
 
     private void refreshAllData() {
-        adminInfoLabel.setText("已登入管理者：" + admin.getUsername() + " ｜ 可管理使用者、書籍、借還紀錄、書評、預約、等級申請與 Web 報表");
+        adminInfoLabel.setText("已登入管理者：" + admin.getUsername() + " ｜ 可管理使用者、書籍、借還紀錄、書評、預約、等級申請與 Web 管理頁");
         refreshOverview();
         refreshBorrowRecordTable();
         refreshUsersTable();
@@ -956,7 +956,7 @@ public class AdminDashboardFrame extends JFrame {
     private void startWebDashboard() {
         try {
             String url = webDashboardServer.start();
-            showInfo("Web 報表已啟動：" + url + "\n瀏覽器若未自動開啟，請手動貼上此網址。");
+            showInfo("Web 管理頁已啟動：" + url + "\n瀏覽器若未自動開啟，請手動貼上此網址。");
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().browse(URI.create(url));
             }
