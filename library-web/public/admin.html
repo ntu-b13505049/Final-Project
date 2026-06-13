@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者端 - 圖書館借還書系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- 導航欄 -->
+    <div class="navbar">
+        <h1>⚙️ 圖書館系統 - 管理者端</h1>
+        <div class="user-info">
+            <span>👤 <span id="userName">Admin</span></span>
+            <button class="logout-btn" id="logoutBtn">登出</button>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <div class="main-content">
+        <!-- 側邊欄菜單 -->
+        <aside class="sidebar">
+            <nav>
+                <a href="#" data-section="dashboard" class="active">📊 儀表板</a>
+                <a href="#" data-section="books">📚 書籍管理</a>
+                <a href="#" data-section="users">👥 使用者管理</a>
+                <a href="#" data-section="records">📋 借還紀錄</a>
+            </nav>
+        </aside>
+
+        <!-- 內容區域 -->
+        <div class="content">
+            <!-- 成功/錯誤消息 -->
+            <div id="successMessage" class="success-message"></div>
+            <div id="errorMessage" class="error-message"></div>
+
+            <!-- 1. 儀表板 -->
+            <section id="dashboard" class="content-section active">
+                <h2>📊 儀表板</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <h3>總書籍數</h3>
+                        <div class="value" id="totalBooks">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>活躍使用者</h3>
+                        <div class="value" id="activeUsers">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>目前借閱</h3>
+                        <div class="value" id="currentBorrows">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>逾期未還</h3>
+                        <div class="value" id="overdueCount" style="color: #ff6b6b;">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. 書籍管理 -->
+            <section id="books" class="content-section">
+                <h2>📚 書籍管理</h2>
+                
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜尋書籍...">
+                    <button class="btn btn-primary" onclick="searchBooks()">搜尋</button>
+                    <button class="btn btn-success" onclick="alert('新增書籍功能開發中')">➕ 新增書籍</button>
+                </div>
+
+                <div id="booksList">
+                    <p style="text-align: center; color: #999;">載入中...</p>
+                </div>
+            </section>
+
+            <!-- 3. 使用者管理 -->
+            <section id="users" class="content-section">
+                <h2>👥 使用者管理</h2>
+                
+                <div class="search-box">
+                    <input type="text" id="userSearchInput" placeholder="搜尋使用者..." style="flex: 1;">
+                    <select id="userRoleFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">所有等級</option>
+                        <option value="NORMAL">NORMAL</option>
+                        <option value="VIP">VIP</option>
+                        <option value="GOLD">GOLD</option>
+                        <option value="PLATINUM">PLATINUM</option>
+                    </select>
+                    <select id="userStatusFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">所有狀態</option>
+                        <option value="ACTIVE">正常</option>
+                        <option value="SUSPENDED">已停權</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="searchUsers()">搜尋</button>
+                </div>
+
+                <div id="usersList">
+                    <p style="text-align: center; color: #999;">載入中...</p>
+                </div>
+            </section>
+
+            <!-- 4. 借還紀錄 -->
+            <section id="records" class="content-section">
+                <h2>📋 借還紀錄</h2>
+                
+                <div class="search-box">
+                    <input type="text" placeholder="搜尋學號或姓名..." style="flex: 1;">
+                    <select style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">所有狀態</option>
+                        <option value="ACTIVE">借閱中</option>
+                        <option value="RETURNED">已歸還</option>
+                        <option value="OVERDUE">逾期</option>
+                    </select>
+                    <button class="btn btn-primary">搜尋</button>
+                </div>
+
+                <div id="recordsList">
+                    <p style="text-align: center; color: #999;">
+                        功能開發中...<br>
+                        將顯示所有借還紀錄
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        // 側邊欄菜單點擊事件
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('data-section');
+                
+                // 移除所有活躍狀態
+                document.querySelectorAll('.sidebar a').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
+                // 添加活躍狀態
+                link.classList.add('active');
+                document.getElementById(section).classList.add('active');
+                
+                // 特定部分加載資料
+                if (section === 'books') {
+                    loadBooks();
+                } else if (section === 'users') {
+                    loadUsers();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

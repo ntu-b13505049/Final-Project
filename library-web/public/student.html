@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生端 - 圖書館借還書系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/student.css">
+</head>
+<body>
+    <!-- 導航欄 -->
+    <div class="navbar">
+        <h1>📚 圖書館系統 - 學生端</h1>
+        <div class="user-info">
+            <span>👤 <span id="userName">載入中...</span></span>
+            <span id="userRole"></span>
+            <button class="logout-btn" id="logoutBtn">登出</button>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <div class="main-content">
+        <!-- 側邊欄菜單 -->
+        <aside class="sidebar">
+            <nav>
+                <a href="#" data-section="dashboard" class="active">📊 首頁統計</a>
+                <a href="#" data-section="browse">🔍 瀏覽書籍</a>
+                <a href="#" data-section="history">📖 借還歷史</a>
+                <a href="#" data-section="profile">👤 個人資料</a>
+            </nav>
+        </aside>
+
+        <!-- 內容區域 -->
+        <div class="content">
+            <!-- 成功/錯誤消息 -->
+            <div id="successMessage" class="success-message"></div>
+            <div id="errorMessage" class="error-message"></div>
+
+            <!-- 1. 首頁統計 -->
+            <section id="dashboard" class="content-section active">
+                <h2>📊 首頁統計</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <h3>目前借閱</h3>
+                        <div class="value" id="activeBorrows">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>已歸還</h3>
+                        <div class="value" id="returnedBooks">0</div>
+                    </div>
+                    <div class="stat">
+                        <h3>逾期未還</h3>
+                        <div class="value" id="overdueCount" style="color: #ff6b6b;">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. 瀏覽書籍 -->
+            <section id="browse" class="content-section">
+                <h2>🔍 瀏覽書籍</h2>
+                
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜尋書籍名稱、作者或主題...">
+                    <button class="btn btn-primary" id="searchBtn">搜尋</button>
+                </div>
+
+                <div id="booksList" class="books-grid">
+                    <p>載入中...</p>
+                </div>
+            </section>
+
+            <!-- 3. 借還歷史 -->
+            <section id="history" class="content-section">
+                <h2>📖 借還歷史</h2>
+                <div id="historyList">
+                    <p>載入中...</p>
+                </div>
+            </section>
+
+            <!-- 4. 個人資料 -->
+            <section id="profile" class="content-section">
+                <h2>👤 個人資料</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="profileName" readonly style="background-color: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>學號</label>
+                        <input type="text" id="profileStudentId" readonly style="background-color: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>會員等級</label>
+                        <input type="text" id="profileRole" readonly style="background-color: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>帳號狀態</label>
+                        <input type="text" id="profileStatus" readonly style="background-color: #f5f5f5;">
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- 借書模態框 -->
+    <div id="borrowModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBorrowModal()">&times;</span>
+            <h2>借書</h2>
+            <p id="borrowBookTitle"></p>
+            <div class="form-group">
+                <label for="borrowDays">借閱期限</label>
+                <select id="borrowDays" required>
+                    <option value="">請選擇</option>
+                    <option value="1">1 天</option>
+                    <option value="3">3 天</option>
+                    <option value="7">7 天</option>
+                    <option value="14">14 天</option>
+                    <option value="21">21 天</option>
+                    <option value="30">30 天</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="confirmBorrow()">確認借書</button>
+                <button class="btn btn-secondary" onclick="closeBorrowModal()">取消</button>
+            </div>
+            <input type="hidden" id="borrowBookId">
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/student.js"></script>
+    <script>
+        // 頁面載入時填充個人資料
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = getUser();
+            if (user) {
+                document.getElementById('profileName').value = user.name || '-';
+                document.getElementById('profileStudentId').value = user.student_id || '-';
+                document.getElementById('profileRole').value = getRoleLabel(user.role) || '-';
+                document.getElementById('profileStatus').value = user.status === 'ACTIVE' ? '正常' : '已停權';
+            }
+        });
+
+        // 側邊欄菜單點擊事件
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('data-section');
+                
+                // 移除所有活躍狀態
+                document.querySelectorAll('.sidebar a').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
+                // 添加活躍狀態
+                link.classList.add('active');
+                document.getElementById(section).classList.add('active');
+                
+                // 特定部分加載資料
+                if (section === 'history') {
+                    loadHistory();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
