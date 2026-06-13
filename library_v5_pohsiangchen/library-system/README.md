@@ -29,7 +29,7 @@
 - 查閱所有書評與預約紀錄
 - 主題借閱熱度 Top 10
 - 主題借閱統計視覺化：柱狀圖 / 圓餅圖
-- Web 報表：管理者可啟動本機 Web dashboard
+- Web 管理頁：管理者可啟動本機 Web dashboard，支援總覽圖表、逾期清單，以及書籍、使用者、借還紀錄、書評、預約、等級申請查詢
 
 
 ## 書籍管理 CRUD 說明
@@ -56,7 +56,7 @@
 - Swing GUI
 - SQLite（透過 `sqlite-jdbc`）
 - Maven 專案結構
-- Java 內建 `HttpServer` 本機 Web 報表
+- Java 內建 `HttpServer` 本機 Web 管理頁與 JSON API
 - 自訂 JSON 解析器（不額外依賴第三方 JSON 函式庫）
 
 ## 專案結構
@@ -118,12 +118,32 @@ mvn exec:java
   - `A12345678 / 2a9f8e7d6c5b4a3f2e1d9c8b7a`
   - `B87654321 / 8c7d6e5f4a3b2c1d9e8f7a6b5c`
 
-## Web 報表使用方式
+## Web 管理頁使用方式
 
 1. 使用管理者登入。
-2. 點擊右上角「啟動 Web 報表」。
-3. 系統會啟動本機網址，例如 `http://127.0.0.1:8080/`。
-4. 報表會即時顯示總書數、使用者數、逾期借閱、主題熱度與逾期罰款清單。
+2. 點擊右上角「啟動 Web 管理頁」。
+3. 系統會啟動本機網址，例如 `http://127.0.0.1:8080/`，並嘗試自動開啟瀏覽器。
+4. Web 頁面使用 HTML / CSS / JavaScript 製作，會透過 Java HttpServer 提供的 JSON API 即時讀取 SQLite 資料庫。
+5. 支援功能：
+   - 總覽卡片：總書數、啟用使用者、目前借閱、逾期借閱、書評、預約、等級申請。
+   - 主題借閱熱度：Canvas 柱狀圖與圓餅圖。
+   - 逾期清單：逾期紀錄醒目標示，顯示逾期天數與模擬罰款。
+   - 查詢頁：書籍、使用者、借還紀錄、書評、預約、等級申請皆可在 Web 頁面查詢。
+   - 自動搜尋：輸入條件後不需要按按鈕，前端會自動呼叫 API 更新資料。
+
+主要 API：
+
+```text
+/api/stats
+/api/subjects
+/api/overdue
+/api/books?q=Python&status=AVAILABLE
+/api/users?q=A12345678&role=VIP&status=ACTIVE
+/api/borrows?student=A12345678&status=OVERDUE
+/api/reviews?q=書名&rating=5
+/api/reservations?q=張家豪&status=WAITING
+/api/role-requests?q=VIP&status=PENDING
+```
 
 ## 資料初始化行為
 
@@ -153,6 +173,7 @@ mvn exec:java
 ## 最新介面調整
 
 - 管理者端新增針對單一使用者的完整借還紀錄查詢。
+- 新增完整 Web 管理頁：總覽圖表、逾期清單、書籍 / 使用者 / 借還紀錄 / 書評 / 預約 / 等級申請查詢。
 - 搜尋改為輸入後自動搜尋，不需再按搜尋按鈕。
 - 登入密碼欄可按 Enter 登入。
 - Login、學生端、管理者端統一視窗大小，登入 / 登出不再縮放。
