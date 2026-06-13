@@ -109,7 +109,7 @@ async function loadBooks(query = '') {
               </td>
               <td>
                 <button class="btn btn-primary btn-small" onclick="editBook(${book.id})">編輯</button>
-                <button class="btn btn-warning btn-small" onclick="toggleBookStatus(${book.id})">切換狀態</button>
+                <button class="btn btn-warning btn-small" onclick="toggleBookStatusConfirm(${book.id})">切換狀態</button>
               </td>
             </tr>
           `).join('')}
@@ -137,7 +137,6 @@ async function searchBooks() {
 async function editBook(bookId) {
   try {
     const book = await getBookDetails(bookId);
-    // 這裡可以打開編輯表單
     alert(`編輯書籍功能開發中\n書籍ID: ${bookId}\n書名: ${book.title}`);
   } catch (error) {
     showError('無法獲取書籍資訊');
@@ -145,16 +144,18 @@ async function editBook(bookId) {
 }
 
 /**
- * 切換書籍上架/下架狀態
+ * 確認切換書籍狀態
  * @param {number} bookId - 書籍 ID
  */
-async function toggleBookStatus(bookId) {
-  try {
-    await toggleBookStatus(bookId);
-    showSuccess('書籍狀態已更新');
-    await loadBooks();
-  } catch (error) {
-    showError('更新書籍狀態失敗');
+async function toggleBookStatusConfirm(bookId) {
+  if (confirm('確認要切換此書籍的上架/下架狀態嗎？')) {
+    try {
+      await toggleBookStatus(bookId);
+      showSuccess('書籍狀態已更新');
+      await loadBooks();
+    } catch (error) {
+      showError('更新書籍狀態失敗');
+    }
   }
 }
 
@@ -254,7 +255,6 @@ async function toggleUserStatus(userId, currentStatus) {
  */
 async function loadBorrowRecords(studentId = '', status = '') {
   try {
-    // 這裡需要後端提供借還紀錄查詢接口
     const container = document.getElementById('recordsList');
     container.innerHTML = '<p style="text-align: center; color: #999;">功能開發中...</p>';
   } catch (error) {

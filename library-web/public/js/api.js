@@ -81,7 +81,7 @@ async function updateBook(bookId, bookData) {
 }
 
 /**
- * 切換書籍上架/下架（管理者）
+ * 切換書籍上架/下架狀態（管理者）
  * @param {number} bookId - 書籍 ID
  * @returns {Promise<Object>}
  */
