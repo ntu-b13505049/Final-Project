@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,7 +16,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 // 資料庫連接
-const dbPath = path.join(__dirname, 'library-system.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'library-system.db');
+
+// 檢查資料庫是否存在
+if (!fs.existsSync(dbPath)) {
+  console.error(`❌ 錯誤：找不到資料庫檔案 ${dbPath}`);
+  console.error('請確保 library-system.db 存在於專案目錄中');
+  process.exit(1);
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('資料庫連接失敗:', err);
@@ -437,9 +446,9 @@ app.put('/api/admin/users/:id', async (req, res) => {
 // ==================== 伺服器啟動 ====================
 
 app.listen(PORT, () => {
-  console.log(`\n╔════════════════════════════════════════╗`);
-  console.log(`║ 📚 圖書館借還書系統 (Web 版本)         ║`);
-  console.log(`╚════════════════════════════════════════╝\n`);
+  console.log(`\n\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557`);
+  console.log(`\u2551 \ud83d\udcda \u5716\u66f8\u9928\u501f\u9084\u66f8\u7cfb\u7d71 (Web \u7248\u672c)         \u2551`);
+  console.log(`\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\n`);
   console.log(`✓ 伺服器已啟動`);
   console.log(`✓ 訪問地址: http://localhost:${PORT}`);
   console.log(`✓ 資料庫路徑: ${dbPath}\n`);
