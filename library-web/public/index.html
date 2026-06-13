@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖書館借還書系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h1>📚 圖書館系統</h1>
+            <p class="subtitle">Library Management System</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="role">身份選擇</label>
+                    <select id="role" required>
+                        <option value="student">學生</option>
+                        <option value="admin">管理者</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">帳號</label>
+                    <input type="text" id="username" placeholder="請輸入帳號" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" placeholder="請輸入密碼" required>
+                </div>
+
+                <div id="errorMessage" class="error-message"></div>
+
+                <button type="submit" class="btn btn-primary">登入</button>
+            </form>
+
+            <hr class="divider">
+
+            <div class="register-section">
+                <p>還沒有帳號？</p>
+                <button type="button" class="btn btn-secondary" onclick="showRegisterForm()">立即註冊</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 註冊表單（隱藏） -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRegisterForm()">&times;</span>
+            <h2>新使用者註冊</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regStudentId">學號</label>
+                    <input type="text" id="regStudentId" placeholder="例: A12345678" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regName">姓名</label>
+                    <input type="text" id="regName" placeholder="請輸入姓名" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword">密碼</label>
+                    <input type="password" id="regPassword" placeholder="請輸入密碼" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPasswordConfirm">確認密碼</label>
+                    <input type="password" id="regPasswordConfirm" placeholder="請再次輸入密碼" required>
+                </div>
+
+                <div id="registerError" class="error-message"></div>
+
+                <button type="submit" class="btn btn-primary">完成註冊</button>
+                <button type="button" class="btn btn-secondary" onclick="closeRegisterForm()">取消</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // 登入表單提交
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const role = document.getElementById('role').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 保存使用者資訊到 localStorage
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('token', data.token);
+
+                    // 根據角色導向
+                    if (data.user.role === 'ADMIN') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'student.html';
+                    }
+                } else {
+                    errorMsg.textContent = data.error || '登入失敗';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsg.textContent = '網路連接失敗，請稍後重試';
+                errorMsg.style.display = 'block';
+                console.error('登入錯誤:', err);
+            }
+        });
+
+        // 顯示註冊表單
+        function showRegisterForm() {
+            document.getElementById('registerModal').style.display = 'flex';
+        }
+
+        // 關閉註冊表單
+        function closeRegisterForm() {
+            document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('registerForm').reset();
+        }
+
+        // 註冊表單提交
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const student_id = document.getElementById('regStudentId').value;
+            const name = document.getElementById('regName').value;
+            const password = document.getElementById('regPassword').value;
+            const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+            const errorMsg = document.getElementById('registerError');
+
+            if (password !== passwordConfirm) {
+                errorMsg.textContent = '密碼不一致';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id, name, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('註冊成功！請使用您的帳號登入');
+                    closeRegisterForm();
+                } else {
+                    errorMsg.textContent = data.error || '註冊失敗';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsg.textContent = '網路連接失敗，請稍後重試';
+                errorMsg.style.display = 'block';
+                console.error('註冊錯誤:', err);
+            }
+        });
+
+        // 按 Enter 登入
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
