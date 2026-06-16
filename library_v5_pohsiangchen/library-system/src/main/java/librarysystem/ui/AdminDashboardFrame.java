@@ -120,9 +120,7 @@ public class AdminDashboardFrame extends JFrame {
     public AdminDashboardFrame(Admin admin) {
         this.admin = admin;
         setTitle("圖書館系統 - 管理者介面");
-        setSize(UiUtil.mainWindowSize());
-        setMinimumSize(UiUtil.mainWindowSize());
-        setLocationRelativeTo(null);
+        UiUtil.setupStableMainWindow(this);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
 
@@ -130,22 +128,29 @@ public class AdminDashboardFrame extends JFrame {
         add(createTabs(), BorderLayout.CENTER);
 
         refreshAllData();
+        UiUtil.styleFrame(this);
+        UiUtil.applyModernStyle(getContentPane());
     }
 
     private JPanel createHeader() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
+        JPanel panel = new UiUtil.GradientPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(18, 26, 18, 26));
 
         JLabel titleLabel = new JLabel("管理者後台");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
+        titleLabel.setForeground(java.awt.Color.WHITE);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 30));
         adminInfoLabel = new JLabel(" ");
+        adminInfoLabel.setForeground(new java.awt.Color(224, 231, 255));
+        adminInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
 
         JPanel left = new JPanel();
+        left.setOpaque(false);
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
         left.add(titleLabel);
         left.add(adminInfoLabel);
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        right.setOpaque(false);
         JButton refreshButton = new JButton("重新整理後台資料");
         JButton webButton = new JButton("啟動 Web 管理頁");
         JButton logoutButton = new JButton("登出");
@@ -340,7 +345,7 @@ public class AdminDashboardFrame extends JFrame {
         JPanel searchPanel = new JPanel(new GridBagLayout());
         searchPanel.setBorder(BorderFactory.createTitledBorder("書籍搜尋"));
         bookSearchKeywordField = new JTextField(24);
-        bookStatusFilterBox = new JComboBox<>(new String[]{"全部", "上架中", "已下架", "已借出", "可借"});
+        bookStatusFilterBox = new JComboBox<>(new String[]{"全部", "上架中", "已下架", "已借出", "已被預約", "可借"});
         addFilterField(searchPanel, 0, "關鍵字 / ISBN / 書籍ID", bookSearchKeywordField);
         addFilterCombo(searchPanel, 1, "狀態", bookStatusFilterBox);
         JButton bookResetButton = new JButton("清空條件");
@@ -661,15 +666,13 @@ public class AdminDashboardFrame extends JFrame {
     }
 
     private JLabel statCard(JPanel container, String title) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(card.getBackground().darker()),
-                BorderFactory.createEmptyBorder(12, 12, 12, 12)));
-
+        JPanel card = UiUtil.createCardPanel(new BorderLayout(4, 4));
         JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
+        titleLabel.setForeground(UiUtil.MUTED);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         JLabel valueLabel = new JLabel("0", SwingConstants.CENTER);
-        valueLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
+        valueLabel.setForeground(UiUtil.PRIMARY_DARK);
+        valueLabel.setFont(new Font("SansSerif", Font.BOLD, 32));
         card.add(titleLabel, BorderLayout.NORTH);
         card.add(valueLabel, BorderLayout.CENTER);
         container.add(card);
@@ -677,10 +680,7 @@ public class AdminDashboardFrame extends JFrame {
     }
 
     private JPanel buildTitledPanel(String title, java.awt.Component child) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(title));
-        panel.add(child, BorderLayout.CENTER);
-        return panel;
+        return UiUtil.createTitledCard(title, child);
     }
 
     private String[] withAll(String[] values) {
@@ -707,6 +707,7 @@ public class AdminDashboardFrame extends JFrame {
             case "上架中" -> "ACTIVE";
             case "已下架" -> "INACTIVE";
             case "已借出" -> "BORROWED";
+            case "已被預約" -> "RESERVED";
             case "可借" -> "AVAILABLE";
             case "全部" -> "";
             default -> selected;
@@ -803,7 +804,7 @@ public class AdminDashboardFrame extends JFrame {
                 textOf(bookSearchKeywordField),
                 statusFilterValue(bookStatusFilterBox)
         )) {
-            String statusText = !book.isActive() ? "已下架" : (book.isBorrowed() ? "上架中 / 已借出" : "上架中 / 可借");
+            String statusText = !book.isActive() ? "已下架" : "上架中 / " + book.getAvailabilityText().replace("可借閱", "可借");
             booksModel.addRow(new Object[]{
                     book.getBookId(),
                     book.getTitle(),
@@ -1211,8 +1212,7 @@ public class AdminDashboardFrame extends JFrame {
     }
 
     private void logout() {
-        new LoginFrame().setVisible(true);
-        dispose();
+        UiUtil.replaceWindow(this, new LoginFrame());
     }
 
     private static class SubjectStatsChartPanel extends JPanel {
@@ -1222,6 +1222,14 @@ public class AdminDashboardFrame extends JFrame {
         SubjectStatsChartPanel() {
             setPreferredSize(new java.awt.Dimension(460, 360));
             setBackground(Color.WHITE);
+        }
+
+        private Color[] palette() {
+            return new Color[]{
+                    UiUtil.PRIMARY, UiUtil.ACCENT, new Color(14, 165, 233), new Color(16, 185, 129),
+                    new Color(245, 158, 11), new Color(239, 68, 68), new Color(236, 72, 153),
+                    new Color(100, 116, 139), new Color(132, 204, 22), new Color(20, 184, 166)
+            };
         }
 
         void setData(Map<String, Integer> data) {
@@ -1260,7 +1268,8 @@ public class AdminDashboardFrame extends JFrame {
             int barMax = Math.max(80, width - x - 70);
             int rowHeight = 28;
             int max = data.values().stream().mapToInt(Integer::intValue).max().orElse(1);
-            g2.setColor(Color.DARK_GRAY);
+            Color[] palette = palette();
+            g2.setColor(UiUtil.TEXT);
             g2.drawString("主題借閱柱狀圖", 18, 18);
             int i = 0;
             for (Map.Entry<String, Integer> entry : data.entrySet()) {
@@ -1269,9 +1278,11 @@ public class AdminDashboardFrame extends JFrame {
                     break;
                 }
                 int barWidth = Math.max(6, (int) Math.round(entry.getValue() * 1.0 / max * barMax));
-                g2.setColor(Color.DARK_GRAY);
+                g2.setColor(UiUtil.TEXT);
                 g2.drawString(shorten(entry.getKey(), 12), 16, yy + 15);
-                g2.fillRoundRect(x, yy, barWidth, 18, 8, 8);
+                g2.setColor(palette[i % palette.length]);
+                g2.fillRoundRect(x, yy, barWidth, 18, 10, 10);
+                g2.setColor(UiUtil.MUTED);
                 g2.drawString(String.valueOf(entry.getValue()), x + barWidth + 8, yy + 15);
                 i++;
             }
@@ -1285,12 +1296,8 @@ public class AdminDashboardFrame extends JFrame {
             int total = data.values().stream().mapToInt(Integer::intValue).sum();
             int start = 0;
             int i = 0;
-            Color[] palette = new Color[]{
-                    new Color(80, 80, 80), new Color(120, 120, 120), new Color(160, 160, 160),
-                    new Color(100, 130, 160), new Color(150, 120, 100), new Color(120, 150, 120),
-                    new Color(160, 100, 120), new Color(100, 160, 160), new Color(170, 150, 90), new Color(130, 100, 160)
-            };
-            g2.setColor(Color.DARK_GRAY);
+            Color[] palette = palette();
+            g2.setColor(UiUtil.TEXT);
             g2.drawString("主題借閱圓餅圖", 18, 18);
             for (Map.Entry<String, Integer> entry : data.entrySet()) {
                 int angle = (int) Math.round(entry.getValue() * 360.0 / total);
@@ -1309,7 +1316,7 @@ public class AdminDashboardFrame extends JFrame {
                 }
                 g2.setColor(palette[i % palette.length]);
                 g2.fillRect(legendX, yy - 10, 14, 14);
-                g2.setColor(Color.DARK_GRAY);
+                g2.setColor(UiUtil.TEXT);
                 g2.drawString(shorten(entry.getKey(), 14) + "：" + entry.getValue(), legendX + 20, yy + 2);
                 i++;
             }

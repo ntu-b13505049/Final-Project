@@ -9,12 +9,8 @@ import javax.swing.UIManager;
 
 public class App {
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {
-        }
-
-        UiUtil.applyGlobalFont(16f);
+        UiUtil.installModernLookAndFeel();
+        UiUtil.applyGlobalFont(17f);
 
         try {
             Database.initialize();

@@ -29,43 +29,53 @@ public class LoginFrame extends JFrame {
 
     public LoginFrame() {
         setTitle("圖書館借還書系統");
-        setSize(UiUtil.mainWindowSize());
-        setMinimumSize(UiUtil.mainWindowSize());
+        UiUtil.setupStableMainWindow(this);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
         setLayout(new BorderLayout(12, 12));
 
         add(createHeaderPanel(), BorderLayout.NORTH);
         add(createCenterPanel(), BorderLayout.CENTER);
         add(createFooterPanel(), BorderLayout.SOUTH);
+
+        UiUtil.styleFrame(this);
+        UiUtil.applyModernStyle(getContentPane());
     }
 
     private JPanel createHeaderPanel() {
-        JPanel panel = new JPanel();
-        panel.setBorder(BorderFactory.createEmptyBorder(18, 18, 6, 18));
+        JPanel panel = new UiUtil.GradientPanel();
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 36, 28, 36));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         JLabel title = new JLabel("Java 圖書館借還書系統", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 28));
+        title.setForeground(java.awt.Color.WHITE);
+        title.setFont(new Font("SansSerif", Font.BOLD, 34));
         title.setAlignmentX(CENTER_ALIGNMENT);
 
         JLabel subtitle = new JLabel("學生 / 管理者雙角色、借還紀錄、提醒、預約、書評、等級申請、Web 報表", SwingConstants.CENTER);
-        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        subtitle.setForeground(new java.awt.Color(224, 231, 255));
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 18));
         subtitle.setAlignmentX(CENTER_ALIGNMENT);
 
         panel.add(title);
-        panel.add(Box.createVerticalStrut(8));
+        panel.add(Box.createVerticalStrut(10));
         panel.add(subtitle);
         return panel;
     }
 
-    private JTabbedPane createCenterPanel() {
+    private JPanel createCenterPanel() {
+        JPanel card = new UiUtil.SoftCardPanel(new BorderLayout(10, 10));
+        card.setBorder(BorderFactory.createEmptyBorder(20, 26, 22, 26));
+
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setBorder(BorderFactory.createEmptyBorder(0, 18, 0, 18));
         tabbedPane.addTab("學生登入", createUserLoginPanel());
         tabbedPane.addTab("學生註冊", createRegisterPanel());
         tabbedPane.addTab("管理者登入", createAdminLoginPanel());
-        return tabbedPane;
+        card.add(tabbedPane, BorderLayout.CENTER);
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(22, 260, 12, 260));
+        wrapper.add(card, BorderLayout.CENTER);
+        return wrapper;
     }
 
     private JPanel createUserLoginPanel() {
@@ -82,8 +92,7 @@ public class LoginFrame extends JFrame {
         Runnable doLogin = () -> {
             try {
                 User user = authService.loginUser(studentNoField.getText(), new String(passwordField.getPassword()));
-                new UserDashboardFrame(user).setVisible(true);
-                dispose();
+                UiUtil.replaceWindow(this, new UserDashboardFrame(user));
             } catch (Exception ex) {
                 showError(ex.getMessage());
             }
@@ -144,8 +153,7 @@ public class LoginFrame extends JFrame {
         Runnable doLogin = () -> {
             try {
                 Admin admin = authService.loginAdmin(usernameField.getText(), new String(passwordField.getPassword()));
-                new AdminDashboardFrame(admin).setVisible(true);
-                dispose();
+                UiUtil.replaceWindow(this, new AdminDashboardFrame(admin));
             } catch (Exception ex) {
                 showError(ex.getMessage());
             }
@@ -158,7 +166,7 @@ public class LoginFrame extends JFrame {
 
     private JPanel createFooterPanel() {
         JPanel panel = new JPanel();
-        panel.setBorder(BorderFactory.createEmptyBorder(4, 18, 18, 18));
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 18, 22, 18));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         JLabel tip1 = new JLabel("初始學生資料改為從 data/Users.json 匯入", SwingConstants.CENTER);
@@ -181,7 +189,7 @@ public class LoginFrame extends JFrame {
 
     private JPanel buildFormPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        panel.setBorder(BorderFactory.createEmptyBorder(28, 24, 26, 24));
         return panel;
     }
 

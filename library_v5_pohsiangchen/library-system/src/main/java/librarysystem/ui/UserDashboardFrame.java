@@ -83,9 +83,7 @@ public class UserDashboardFrame extends JFrame {
     public UserDashboardFrame(User user) {
         this.currentUser = user;
         setTitle("圖書館系統 - 使用者介面");
-        setSize(UiUtil.mainWindowSize());
-        setMinimumSize(UiUtil.mainWindowSize());
-        setLocationRelativeTo(null);
+        UiUtil.setupStableMainWindow(this);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
 
@@ -93,25 +91,31 @@ public class UserDashboardFrame extends JFrame {
         add(createTabs(), BorderLayout.CENTER);
 
         refreshAllData();
+        UiUtil.styleFrame(this);
+        UiUtil.applyModernStyle(getContentPane());
     }
 
     private JPanel createHeader() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
+        JPanel panel = new UiUtil.GradientPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(18, 26, 18, 26));
 
         JLabel titleLabel = new JLabel("學生使用者中心");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
+        titleLabel.setForeground(java.awt.Color.WHITE);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 30));
 
         userInfoLabel = new JLabel(" ");
-        userInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 15));
+        userInfoLabel.setForeground(new java.awt.Color(224, 231, 255));
+        userInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
 
         JPanel left = new JPanel();
+        left.setOpaque(false);
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
         left.add(titleLabel);
         left.add(Box.createVerticalStrut(4));
         left.add(userInfoLabel);
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        right.setOpaque(false);
         JButton refreshButton = new JButton("重新整理全部資料");
         JButton logoutButton = new JButton("登出");
         refreshButton.addActionListener(e -> refreshAllData());
@@ -462,10 +466,7 @@ public class UserDashboardFrame extends JFrame {
     }
 
     private JPanel buildTitledPanel(String title, java.awt.Component child) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(title));
-        panel.add(child, BorderLayout.CENTER);
-        return panel;
+        return UiUtil.createTitledCard(title, child);
     }
 
     private DefaultTableModel modelOf(String... columns) {
@@ -1088,7 +1089,6 @@ public class UserDashboardFrame extends JFrame {
     }
 
     private void logout() {
-        new LoginFrame().setVisible(true);
-        dispose();
+        UiUtil.replaceWindow(this, new LoginFrame());
     }
 }

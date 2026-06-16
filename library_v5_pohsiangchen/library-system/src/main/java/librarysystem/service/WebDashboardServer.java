@@ -260,7 +260,7 @@ public class WebDashboardServer {
                         <p class="hint">可查題名、作者、主題、出版者、出版年、ISBN 等欄位；輸入後會自動搜尋。</p>
                         <div class="filters">
                           <div><label>關鍵字 / ISBN</label><input id="book-q" placeholder="例如：Python、Pearson、978..." autocomplete="off"></div>
-                          <div><label>狀態</label><select id="book-status"><option value="">全部</option><option value="ACTIVE">上架中</option><option value="INACTIVE">已下架</option><option value="BORROWED">已借出</option><option value="AVAILABLE">可借</option></select></div>
+                          <div><label>狀態</label><select id="book-status"><option value="">全部</option><option value="ACTIVE">上架中</option><option value="INACTIVE">已下架</option><option value="BORROWED">已借出</option><option value="RESERVED">已被預約</option><option value="AVAILABLE">可借</option></select></div>
                         </div>
                         <div class="count-line" id="books-count"></div>
                         <div class="table-wrap"><table id="books-table"></table></div>
@@ -355,8 +355,11 @@ public class WebDashboardServer {
                     }
                     function badge(text, type = "gray") { return `<span class="badge ${type}">${esc(text)}</span>`; }
                     function bookStatus(row) {
-                      if (!row.active) return badge("已下架", "gray");
-                      return row.borrowed ? badge("已借出", "warn") : badge("可借", "good");
+                      const availability = row.availability || "";
+                      if (!row.active || availability === "下架") return badge("已下架", "gray");
+                      if (availability.includes("已被預約")) return badge(availability, "brand");
+                      if (availability.includes("已借出")) return badge(availability, "warn");
+                      return badge("可借", "good");
                     }
                     function userStatus(v) { return v === "ACTIVE" ? badge(v, "good") : badge(v, "bad"); }
                     function roleBadge(v) { return badge(v || "NORMAL", v === "NORMAL" ? "gray" : "brand"); }
@@ -599,6 +602,7 @@ public class WebDashboardServer {
             appendJsonField(json, "isbn", book.getIsbn()).append(',');
             appendJsonField(json, "active", book.isActive()).append(',');
             appendJsonField(json, "borrowed", book.isBorrowed()).append(',');
+            appendJsonField(json, "reserved", book.isReserved()).append(',');
             appendJsonField(json, "availability", book.getAvailabilityText());
             json.append('}');
         }
