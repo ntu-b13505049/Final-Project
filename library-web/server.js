@@ -100,9 +100,11 @@ app.post('/api/auth/login', async (req, res) => {
 
     // 學生登入
     const student = await dbGet(
-      `SELECT id, student_id, name, role_level, status FROM users WHERE student_id = ?`,
+      `SELECT user_id, student_no, name, role_level, status
+      FROM users
+      WHERE student_no = ?`,
       [username]
-    );
+      );
 
     if (!student) {
       return res.status(401).json({ error: '帳號不存在' });
@@ -114,19 +116,17 @@ app.post('/api/auth/login', async (req, res) => {
 
     // 查詢密碼
     const user = await dbGet(
-      `SELECT password_hash FROM users WHERE id = ?`,
-      [student.id]
+      `SELECT password FROM users WHERE user_id = ?`,
+      [student.user_id]
     );
 
-    if (!user || user.password_hash !== hashPassword(password)) {
-      return res.status(401).json({ error: '密碼錯誤' });
-    }
+    if (!user || user.password !== hashPassword(password)) 
 
     res.json({
       success: true,
       user: {
-        id: student.id,
-        student_id: student.student_id,
+        id: student.user_id,
+        student_id: student.student_no,
         name: student.name,
         role: student.role_level,
         status: student.status
@@ -149,7 +149,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     // 檢查是否已存在
     const existing = await dbGet(
-      `SELECT id FROM users WHERE student_id = ?`,
+      `SELECT user_id FROM users WHERE student_no = ?`,
       [student_id]
     );
 
@@ -159,8 +159,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     // 新增使用者
     await dbRun(
-      `INSERT INTO users (student_id, name, password_hash, role_level, status, created_at)
-       VALUES (?, ?, ?, 'NORMAL', 'ACTIVE', datetime('now'))`,
+      `INSERT INTO users
+      (student_no, name, password, role_level, status, created_at)
+      VALUES (?, ?, ?, 'NORMAL', 'ACTIVE', datetime('now'))`,
       [student_id, name, hashPassword(password)]
     );
 
