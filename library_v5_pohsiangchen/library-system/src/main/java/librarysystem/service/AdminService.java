@@ -140,7 +140,11 @@ public class AdminService {
                        CASE WHEN EXISTS (
                            SELECT 1 FROM borrow_records br
                            WHERE br.book_id = b.book_id AND br.return_date IS NULL
-                       ) THEN 1 ELSE 0 END AS borrowed
+                       ) THEN 1 ELSE 0 END AS borrowed,
+                       CASE WHEN EXISTS (
+                           SELECT 1 FROM reservations r
+                           WHERE r.book_id = b.book_id AND r.status IN ('WAITING', 'NOTIFIED')
+                       ) THEN 1 ELSE 0 END AS reserved
                 FROM books b
                 WHERE 1 = 1
                 """);
@@ -188,9 +192,14 @@ public class AdminService {
                     AND b.active = 1
                     AND EXISTS (SELECT 1 FROM borrow_records br WHERE br.book_id = b.book_id AND br.return_date IS NULL)
                     """);
+            case "RESERVED" -> sql.append("""
+                    AND b.active = 1
+                    AND EXISTS (SELECT 1 FROM reservations r WHERE r.book_id = b.book_id AND r.status IN ('WAITING', 'NOTIFIED'))
+                    """);
             case "AVAILABLE" -> sql.append("""
                     AND b.active = 1
                     AND NOT EXISTS (SELECT 1 FROM borrow_records br WHERE br.book_id = b.book_id AND br.return_date IS NULL)
+                    AND NOT EXISTS (SELECT 1 FROM reservations r WHERE r.book_id = b.book_id AND r.status IN ('WAITING', 'NOTIFIED'))
                     """);
             default -> { }
         }
@@ -728,6 +737,7 @@ public class AdminService {
         book.setIsbn(rs.getString("isbn"));
         book.setActive(rs.getInt("active") == 1);
         book.setBorrowed(rs.getInt("borrowed") == 1);
+        book.setReserved(rs.getInt("reserved") == 1);
         return book;
     }
 

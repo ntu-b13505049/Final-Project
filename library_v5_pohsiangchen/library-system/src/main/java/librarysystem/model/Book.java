@@ -14,6 +14,7 @@ public class Book {
     private String isbn;
     private boolean active;
     private boolean borrowed;
+    private boolean reserved;
 
     public int getBookId() {
         return bookId;
@@ -119,10 +120,21 @@ public class Book {
         this.borrowed = borrowed;
     }
 
+    public boolean isReserved() {
+        return reserved;
+    }
+
+    public void setReserved(boolean reserved) {
+        this.reserved = reserved;
+    }
+
     public String getAvailabilityText() {
         if (!active) {
             return "下架";
         }
-        return borrowed ? "已借出" : "可借閱";
+        if (borrowed) {
+            return reserved ? "已借出 / 已被預約" : "已借出";
+        }
+        return reserved ? "已被預約" : "可借閱";
     }
 }

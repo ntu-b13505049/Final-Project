@@ -63,7 +63,11 @@ public class LibraryService {
                        CASE WHEN EXISTS (
                            SELECT 1 FROM borrow_records br
                            WHERE br.book_id = b.book_id AND br.return_date IS NULL
-                       ) THEN 1 ELSE 0 END AS borrowed
+                       ) THEN 1 ELSE 0 END AS borrowed,
+                       CASE WHEN EXISTS (
+                           SELECT 1 FROM reservations r
+                           WHERE r.book_id = b.book_id AND r.status IN ('WAITING', 'NOTIFIED')
+                       ) THEN 1 ELSE 0 END AS reserved
                 FROM books b
                 WHERE (? = '' OR LOWER(b.title) LIKE ?)
                   AND (? = '' OR LOWER(b.authors) LIKE ?)
@@ -116,7 +120,11 @@ public class LibraryService {
                        CASE WHEN EXISTS (
                            SELECT 1 FROM borrow_records br
                            WHERE br.book_id = b.book_id AND br.return_date IS NULL
-                       ) THEN 1 ELSE 0 END AS borrowed
+                       ) THEN 1 ELSE 0 END AS borrowed,
+                       CASE WHEN EXISTS (
+                           SELECT 1 FROM reservations r
+                           WHERE r.book_id = b.book_id AND r.status IN ('WAITING', 'NOTIFIED')
+                       ) THEN 1 ELSE 0 END AS reserved
                 FROM books b
                 WHERE b.book_id = ?
                 """;
@@ -188,8 +196,9 @@ public class LibraryService {
             if (book.isBorrowed()) {
                 throw new IllegalArgumentException("此書目前已借出，可改用預約功能。");
             }
-            if (hasNotifiedReservationForOther(connection, bookId, user.getUserId())) {
-                throw new IllegalArgumentException("此書已通知預約者保留，暫時不能借閱。");
+            if (hasActiveReservationForOther(connection, bookId, user.getUserId())
+                    && !hasNotifiedReservationForUser(connection, bookId, user.getUserId())) {
+                throw new IllegalArgumentException("此書已被預約，暫時不能借閱。");
             }
 
             connection.setAutoCommit(false);
@@ -316,6 +325,9 @@ public class LibraryService {
                 throw new IllegalArgumentException("此書已下架，無法預約。");
             }
             if (!book.isBorrowed()) {
+                if (book.isReserved()) {
+                    throw new IllegalArgumentException("此書已被預約，請等待目前預約流程結束。");
+                }
                 throw new IllegalArgumentException("此書目前可借，請直接借閱，不需預約。");
             }
             if (userAlreadyBorrowingBook(connection, userId, bookId)) {
@@ -473,7 +485,11 @@ public class LibraryService {
                        CASE WHEN EXISTS (
                            SELECT 1 FROM borrow_records br
                            WHERE br.book_id = b.book_id AND br.return_date IS NULL
-                       ) THEN 1 ELSE 0 END AS borrowed
+                       ) THEN 1 ELSE 0 END AS borrowed,
+                       CASE WHEN EXISTS (
+                           SELECT 1 FROM reservations r
+                           WHERE r.book_id = b.book_id AND r.status IN ('WAITING', 'NOTIFIED')
+                       ) THEN 1 ELSE 0 END AS reserved
                 FROM favorites f
                 JOIN books b ON f.book_id = b.book_id
                 WHERE f.user_id = ?
@@ -673,8 +689,19 @@ public class LibraryService {
         }
     }
 
-    private boolean hasNotifiedReservationForOther(Connection connection, int bookId, int currentUserId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM reservations WHERE book_id = ? AND status = 'NOTIFIED' AND user_id <> ?";
+    private boolean hasActiveReservationForOther(Connection connection, int bookId, int currentUserId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM reservations WHERE book_id = ? AND status IN ('WAITING', 'NOTIFIED') AND user_id <> ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, bookId);
+            ps.setInt(2, currentUserId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    private boolean hasNotifiedReservationForUser(Connection connection, int bookId, int currentUserId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM reservations WHERE book_id = ? AND status = 'NOTIFIED' AND user_id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, bookId);
             ps.setInt(2, currentUserId);
@@ -815,6 +842,7 @@ public class LibraryService {
         book.setIsbn(rs.getString("isbn"));
         book.setActive(rs.getInt("active") == 1);
         book.setBorrowed(rs.getInt("borrowed") == 1);
+        book.setReserved(rs.getInt("reserved") == 1);
         return book;
     }
 
